@@ -71,45 +71,48 @@
 			this.movePen(x,y);
 			target.moveTo(x,y);
 		}
-		this.lineTo = function(x,y, showcontrol) {
+		this.lineTo = function(x,y, showcontrol, r) {
 			if (showcontrol || this.showcontrol) {
+				if (isNaN(r)) r = 2;
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},
 					p2: {x:x, y:y}
 				}, {
-					controlLine: {color:"rgb(200,100,100)", width:1},
-					point: {color:"rgb(200,50,50)", fill:"white", width:2, radius:2},					
+					controlLine: {color:"rgb(200,100,100)", width:r/2},
+					point: {color:"rgb(200,50,50)", fill:"white", width:r, radius:r},					
 				});
 			}
 			target.lineTo(x,y);
 			this.movePen(x,y);
 		}
 
-		this.bezierCurveTo = function(cpx1,cpy1,cpx2,cpy2,x,y, showcontrol) {
+		this.bezierCurveTo = function(cpx1,cpy1,cpx2,cpy2,x,y, showcontrol, r) {
 			if (showcontrol || this.showcontrol) {
+				if (isNaN(r)) r = 2;	// radius of points to draw with
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},
 					p2: {x:x, y:y},
 					cp1: {x:cpx1, y:cpy1},
 					cp2: {x:cpx2, y:cpy2},
 				}, {
-					controlLine: {color:"rgb(200,100,100)", width:1},
-					point: {color:"rgb(200,50,50)", fill:"white", width:2, radius:2},
+					controlLine: {color:"rgb(200,100,100)", width:r/2},
+					point: {color:"rgb(200,50,50)", fill:"white", width:r, radius:r},
 				});
 			}
 			// rest of curve
 			target.bezierCurveTo(cpx1,cpy1,cpx2,cpy2,x,y);
 			this.movePen(x,y);
 		}
-		this.quadraticCurveTo = function(cpx, cpy, x, y, showcontrol) {
+		this.quadraticCurveTo = function(cpx, cpy, x, y, showcontrol, r) {
 			if (showcontrol || this.showcontrol) {
+				if (isNaN(r)) r = 2;
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},
 					p2: {x:x, y:y},
 					cp1: {x:cpx, y:cpy},
 				}, {
-					controlLine: {color:"#C00", width:1},
-					point: {color:"#C00", fill:"white", width:2, radius:2},					
+					controlLine: {color:"#C00", width:r/2},
+					point: {color:"#C00", fill:"white", width:r, radius:r},					
 				});
 			}
 
@@ -162,39 +165,45 @@
 		this.drawCurveControl = function(point, style) {
 			target.save();
 			// assume path has already begun
-			console.log(["from points","("+Math.round(point.p1.x*10)/10+", "+Math.round(point.p1.y*10)/10+")", "to", 
-				"("+Math.round(point.p2.x*10)/10+", "+Math.round(point.p2.y*10)/10+")"].join(" "));
+
+			var ptprint = [point.p1];
 			// draw control lines
 			target.strokeStyle = style.controlLine.color;
 			target.lineWidth = style.controlLine.width;
 			if (point.cp1) {
 				target.moveTo(point.p1.x, point.p1.y);
 				target.lineTo(point.cp1.x, point.cp1.y);
+				ptprint.push(point.cp1);
 				if (point.cp2) {
 					// 2 control points, cubic bezier
 					target.lineTo(point.cp2.x, point.cp2.y);
 					target.lineTo(point.p2.x, point.p2.y);
+					ptprint.push(point.cp2);
 				}
 				else {
 					target.lineTo(point.p2.x, point.p2.y);
 				}
 			}
 			target.stroke();
+			ptprint.push(point.p2);
 
 			// control points
-			for (var p in point) {
+			for (var i = 0; i < ptprint.length; ++i) {
+				var p = ptprint[i];
+				ptprint[i] = "("+Math.round(ptprint[i].x*10)/10+", "+Math.round(ptprint[i].y*10)/10+")";
 				target.lineWidth = style.point.width;
 				target.strokeStyle = style.point.color;
 				target.fillStyle = style.point.fill;
 				target.beginPath();
-				target.arc(point[p].x, point[p].y, style.point.radius, 0, 2*Math.PI, true)
-				target.font = "8px arial";
+				target.arc(p.x, p.y, style.point.radius, 0, 2*Math.PI, true)
+				
 				target.fill();
+				target.font = style.point.radius*4+"px arial";
 				target.fillStyle = "black";
-				target.fillText("("+Math.round(point[p].x*10)/10+", "+Math.round(point[p].y*10)/10+")", point[p].x+style.point.radius+5, point[p].y+style.point.radius+5);
-				target.stroke();
-
+				target.fillText(i+1, p.x, p.y+style.point.radius*5);
+				target.stroke();				
 			}
+			console.log("from points",ptprint.join(" to "));
 
 			target.restore();
 			target.beginPath();	// return to previously open path

@@ -15,11 +15,11 @@
 	<div id="teststats">
 		<div id="slidersP" style="border:1px solid black;"></div>
 		<div id="slidersS" style="border:1px solid black;"></div>
-		<div id="slidersM" style="border:1px solid black;"></div>
 		<!-- <canvas id="test" width="900" height="500" style="border:1px solid black"></canvas> -->
 		<div id="inventory"> </div>
 		<div id="chargen"><button id="randomizechar">Randomize Character</button></div>
 	</div>
+	<div id="slidersM" style="border:1px solid black;"></div>
 </div>
 
 <script>
@@ -34,10 +34,10 @@ $("#randomizechar").click(function() {
 	// make new character
 	PC = da.createRandomCharacter(fembias);
 	// wear the previous clothes again
-	PC.top = currentlyWorn.top;
-	PC.bot = currentlyWorn.bot;
-	PC.shoes = currentlyWorn.shoes;
-	PC.acc = currentlyWorn.acc;
+	PC.changeClothes(currentlyWorn.top);
+	PC.changeClothes(currentlyWorn.bot);
+	PC.changeClothes(currentlyWorn.shoes);
+	PC.changeClothes(currentlyWorn.acc);
 
 	redrawPage(PC);
 });
@@ -84,7 +84,7 @@ var PC = new da.Player({
 		"breasts":4,
 		"penis":-5,
 		"testes":-6,
-		"eyes":3,
+		"eyes":0,
 		"lips":2,
 		"lipw":-3,
 		"lipt":2,
@@ -120,7 +120,14 @@ var canvas_holder = document.getElementById("testbody");
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
+	width:1000,
+	height:1500,
 });
+
+
+// hiding it and then immediately showing it again
+da.hideCanvas("player_avatar");
+da.showCanvas("player_avatar");
 
 // EXAMPLE how to draw our character to that canvas
 da.drawfigure("player_avatar", PC);
@@ -137,7 +144,6 @@ var s = $('<div id="sliderfembias" class="slider"></div>').appendTo(holder).slid
 	min:-1,max:1, step:0.01,
 	slide:function(event, ui){
 		$("#curfembias").text(Math.round(ui.value*100)/100);
-		da.drawfigure('player_avatar', PC, true);
 }});
 var cur = $(['<div class="curstat" id="curfembias">',0,'</div>'].join("")).appendTo(holder);
 // print stats of character so you can recreate it
@@ -159,6 +165,12 @@ function showCurPhysique() {
 		$("#slider"+p).slider("option","value",PC.physique[p]);
 	}
 }
+function showCurMods() {
+	for (var p in PC.Mods) {
+		$("#cur"+p+"mod").text(Math.round(PC.Mods[p]*10)/10);
+		$("#slider"+p+"mod").slider("option","value",PC.Mods[p]);		
+	}
+}
 function showCurStats() {
 	for (var p in da.Player.statLimits) {
 		console.log(p);
@@ -167,6 +179,14 @@ function showCurStats() {
 	}
 }
 
+function getSortedKeys(obj) {
+	var keys = [];
+	for (var k in obj) {
+		if (obj.hasOwnProperty(k)) keys.push(k);
+	}
+	keys.sort();
+	return keys;
+}
 function redrawPage(PC) {
 
 	da.drawfigure('player_avatar', PC);
@@ -174,7 +194,9 @@ function redrawPage(PC) {
 	var sliderH = $("#slidersP");
 	sliderH.empty();
 	$('<button id="createchar">Make Character (eval)</button>').appendTo(sliderH);
-	for (var p in PC.physique) {
+	var sortedProperties = getSortedKeys(PC.physique);
+	for (var i = 0; i < sortedProperties.length; ++i) {
+		var p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + '"></div>').appendTo(sliderH);
 		var orig = $(['<div class="origstat">',p,' ',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
 		var s = $('<div id="slider'+p+'" class="slider"></div>').appendTo(holder).slider({value: PC.physique[p],min:da.Player.physiqueLimits[p].low,max:da.Player.physiqueLimits[p].high,
@@ -190,7 +212,9 @@ function redrawPage(PC) {
 	var sliderS = $("#slidersS");
 	sliderS.empty();
 	$('<div class="sliders-header">Core stats</div>').appendTo(sliderS);
-	for (var p in da.Player.statLimits) {
+	sortedProperties = getSortedKeys(da.Player.statLimits);
+	for (var i = 0; i < sortedProperties.length; ++i) {
+		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'stat"></div>').appendTo(sliderS);
 		var orig = $(['<div class="origstat">',p,' ',PC[p],'</div>'].join("")).appendTo(holder);
 		var s = $('<div id="slider'+p+'stat" class="slider"></div>').appendTo(holder).slider({value: PC[p],min:da.Player.statLimits[p].low, max:da.Player.statLimits[p].high,
@@ -207,10 +231,12 @@ function redrawPage(PC) {
 	var sliderM = $("#slidersM");
 	sliderM.empty();
 	$('<div class="sliders-header">Modifiers</div>').appendTo(sliderM);
-	for (var p in PC.Mods) {
+	sortedProperties = getSortedKeys(PC.Mods);
+	for (var i = 0; i < sortedProperties.length; ++i) {
+		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'mod"></div>').appendTo(sliderM);
 		var orig = $(['<div class="origstat">',p,' ',PC.Mods[p],'</div>'].join("")).appendTo(holder);
-		var s = $('<div class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:-10, max:10,
+		var s = $('<div id="slider'+p+'mod" class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:-10, max:10,
 			slide:function(p, event, ui){
 				PC.Mods[p]=ui.value; 
 				$("#cur"+p+"mod").text(PC.Mods[p]);
@@ -273,8 +299,9 @@ $(document).ready(function() {
 					}
 				}
 
-				da.drawfigure('player_avatar', PC, true);
+				da.drawfigure('player_avatar', PC);
 				showCurPhysique();
+				showCurMods();
 			}.bind(null, null, ctag, c));
 		}
 	}

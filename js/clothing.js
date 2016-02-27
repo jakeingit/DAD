@@ -1141,7 +1141,7 @@ var clothes = da.clothes = {
 		layer: 	3,
 		longdesc:"TODO",
 		drawunderbreasts: drawPencilSkirt("rgb(100,30,40)", getPattern("plaid")),
-		legs: 	2,
+		legs: 	5,
 	}),
 
 	"blue_plaid_pencil_skirt" :
@@ -1153,7 +1153,7 @@ var clothes = da.clothes = {
 		layer: 	3,
 		longdesc:"TODO",
 		drawunderbreasts: drawPencilSkirt("rgb(60,100,140)", getPattern("blue_plaid")),
-		legs: 	2,
+		legs: 	8,
 	}),
 	
 	
@@ -1182,6 +1182,8 @@ var clothes = da.clothes = {
 		height: 4,
 		longdesc: "TODO",
 		drawafterall: drawHeels("black", "black", drawHeelStrap("black"), drawHeelStrapDetails("black")),
+		legs: 	4,
+		ass: 	2,
 	}),
 	
 
