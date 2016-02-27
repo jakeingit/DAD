@@ -117,9 +117,12 @@ var modLimits = {
 	noseskew: 	{low:-1e9,high:1e9,avg:0,stdev:2},		// positive means nose starts on the right
 	skinc: 		{low:-1e9,high:1e9,avg:10,stdev:15},	// this is the "natural skin color"
 	penist: 	{low:-10, high:1e9,avg:0,stdev:2},		// penis thickness
-	browh: 		{low:2, high:20, avg:5,stdev:1},		// eyebrow height
-	browt: 		{low:-10, high:20, avg:0,stdev:1},		// eyebrow tilt
-	browc: 		{low:-10, high:20, avg:2,stdev:1},		// eyebrow curl
+	browh: 		{low:10, high:35, avg:15,stdev:5,bias:0},		// eyebrow height
+	browt: 		{low:-10, high:10, avg:1,stdev:2,bias:0},		// eyebrow tilt (higher value tilts more \/ way)
+	browc: 		{low:-10, high:20, avg:2,stdev:1,bias:3},		// eyebrow curl (higher value has higher arch)
+	browb: 		{low:0, high:100, avg:50,stdev:15,bias:0},		// eyebrow bending point (higher value bends closer to outside)
+	browv: 		{low:0, high:100, avg:30,stdev:15,bias:-20},		// eyebrow volume/thickness
+	browr: 		{low:0, high:100, avg:30,stdev:15,bias:20},		// eyebrow roundedness
 };
 // fill out modifier for numerical stats if they don't exist
 (function(){

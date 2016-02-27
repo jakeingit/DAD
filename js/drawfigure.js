@@ -925,15 +925,35 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	}
 	function drawEyebrows(ctx) {
 		ctx.beginPath();
+
 		ctx.fillStyle = HAIRCOLOR;
 		ctx.strokeStyle = HAIRCOLOR;
+		if (browv < 3) return;
+		ctx.lineWidth = Math.sqrt(browv) / 5;
 
-		ex.eyebrow = {};
+		ex.brow = {};
 
-		ex.eyebrow.in = {x:ex.eye.in.x, y:ex.eye.in.y -browh};
-		ex.eyebrow.out = {x:ex.eye.out.x, y:ex.eye.out.y -browh};
-		ctx.moveTo(ex.eyebrow.in.x, ex.eyebrow.in.y);
-		ctx.lineTo(ex.eyebrow.out.x, ex.eyebrow.out.y);
+		ex.brow.in = {x:ex.eye.in.x, y:ex.eye.in.y -browh*0.3 +browt*0.3};
+		ex.brow.out = {x:ex.eye.out.x, y:ex.eye.out.y -browh*0.3 -browt*0.3};
+		ctx.moveTo(ex.brow.out.x, ex.brow.out.y);
+		// decide where along the brow the sharp bend occurs
+		var bendpoint = browb/100;	// assuming browb [0,100]
+		ex.brow.in.cp1 = {x:bendpoint*ex.brow.in.x+(1-bendpoint)*ex.brow.out.x,
+			y:bendpoint*ex.brow.in.y+(1-bendpoint)*ex.brow.out.y -browc*0.4};
+
+		ctx.quadraticCurveTo(ex.brow.in.cp1.x, ex.brow.in.cp1.y,
+			ex.brow.in.x, ex.brow.in.y);
+
+		// gently go down to the bottom or go straight down
+		ex.brow.bot = {x:ex.brow.in.x, y:ex.brow.in.y +browv*0.02};
+		ex.brow.bot.cp1 = {x:ex.brow.in.x +browr*0.015, y:ex.brow.bot.y/2 + ex.brow.in.y/2};	
+		ctx.quadraticCurveTo(ex.brow.bot.cp1.x, ex.brow.bot.cp1.y,
+			ex.brow.bot.x, ex.brow.bot.y);
+
+		ex.brow.out.cp1 = {x:bendpoint*ex.brow.in.x+(1-bendpoint)*ex.brow.out.x,
+			y:bendpoint*ex.brow.in.y+(1-bendpoint)*ex.brow.out.y -browc*0.4}
+		ctx.quadraticCurveTo(ex.brow.out.cp1.x, ex.brow.out.cp1.y,
+			ex.brow.out.x, ex.brow.out.y);
 	}
 	
 	function drawLips(ctx)
@@ -1676,6 +1696,11 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	var noseskew = typeof id["noseskew"] !== 'undefined' ? id["noseskew"] : missingData = true;
 	var penist = typeof id["penist"] !== 'undefined' ? id["penist"] : missingData = true;
 	var browh = typeof id["browh"] !== 'undefined' ? id["browh"] : missingData = true;
+	var browt = typeof id["browt"] !== 'undefined' ? id["browt"] : missingData = true;
+	var browc = typeof id["browc"] !== 'undefined' ? id["browc"] : missingData = true;
+	var browb = typeof id["browb"] !== 'undefined' ? id["browb"] : missingData = true;
+	var browv = typeof id["browv"] !== 'undefined' ? id["browv"] : missingData = true;
+	var browr = typeof id["browr"] !== 'undefined' ? id["browr"] : missingData = true;
 
 	// DRAW POINTS defined (x,y) for specific body points so we have unified calculations
 	// these are calculated once in a core function and then referenced in other functions

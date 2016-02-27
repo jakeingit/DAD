@@ -47,9 +47,9 @@ $("#randomizechar").click(function() {
 // EXAMPLE extending the default Player object
 // create additional core stat of int (intelligence) with default value of 5
 // give the stat some bounds and distribution
-da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5};
-// give it some bias (positive means more feminine characters will have higher score)
-da.Player.femBias["int"] = 0.3;	// females have slightly greater intelligence on average
+da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5, bias:0.3};
+// bias (positive means more feminine characters will have higher score)
+// females have slightly greater intelligence on average
 
 
 // EXAMPLE creating a specific Player object (either the PC or an NPC)
@@ -98,7 +98,7 @@ var PC = new da.Player({
 		"skinc":6,
 		"noseskew":0,
 		"penist":-1,
-		"browh":5,
+		"browc":5,
 	}),
 	physique 	: Object.assign({}, da.defaultPhysique(), {
 		"hairc":-5,
@@ -231,12 +231,15 @@ function redrawPage(PC) {
 	var sliderM = $("#slidersM");
 	sliderM.empty();
 	$('<div class="sliders-header">Modifiers</div>').appendTo(sliderM);
-	sortedProperties = getSortedKeys(PC.Mods);
+	sortedProperties = getSortedKeys(da.Player.modLimits);
 	for (var i = 0; i < sortedProperties.length; ++i) {
 		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'mod"></div>').appendTo(sliderM);
 		var orig = $(['<div class="origstat">',p,' ',PC.Mods[p],'</div>'].join("")).appendTo(holder);
-		var s = $('<div id="slider'+p+'mod" class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:-10, max:10,
+		// if there is a valid min, use it, otherwise use -10
+		var min = (da.Player.modLimits[p].low > -1e8)? da.Player.modLimits[p].low : -10;
+		var max = (da.Player.modLimits[p].high < 1e8)? da.Player.modLimits[p].high : 10;
+		var s = $('<div id="slider'+p+'mod" class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:min, max:max,
 			slide:function(p, event, ui){
 				PC.Mods[p]=ui.value; 
 				$("#cur"+p+"mod").text(PC.Mods[p]);
