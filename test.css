@@ -1,0 +1,53 @@
+body {
+	font-family:consolas;
+	font-size:12px;
+}
+canvas {
+	border:1px solid black;
+}
+#testbody, #teststats {
+	display:flex;
+	align-items: flex-start;
+}
+#teststats {
+	width:1200px;
+	flex-wrap:wrap;
+}
+
+.slider-holder, .clothes-holder {
+	display:flex;
+	width:380px;
+	padding: 5px;
+	border-bottom:1px solid black;
+}
+.sliders-header {
+	text-align:center;
+	width:100%;
+}
+.slider {
+	width:210px;
+}
+.origstat {
+	width:100px;
+}
+.curstat {
+	padding-left:20px;
+}
+.curstat:before {
+	content:"(";
+}
+.curstat:after {
+	content:")";
+}
+#createchar, #randomizechar {
+	width:100%;
+	height:39px;
+	border:none;
+	color:white;
+	background:orange;
+	font-family:consolas;
+}
+
+.wearing {
+	color: rgb(200,200,200);
+}

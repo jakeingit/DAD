@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<script src="da.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href="test.css">
+</head>
+
+<body>
+<div id="testbody">
+	<!-- <canvas id="player_avatar" width="500" height="800" style="border:1px solid black"></canvas> -->
+	<div id="teststats">
+		<div id="slidersP" style="border:1px solid black;"></div>
+		<div id="slidersS" style="border:1px solid black;"></div>
+		<div id="slidersM" style="border:1px solid black;"></div>
+		<!-- <canvas id="test" width="900" height="500" style="border:1px solid black"></canvas> -->
+		<div id="inventory"> </div>
+		<div id="chargen"><button id="randomizechar">Randomize Character</button></div>
+	</div>
+</div>
+
+<script>
+
+// EXAMPLE how to randomly create a character
+$("#randomizechar").click(function() {
+	// save what clothes we're wearing
+	var currentlyWorn = {top:PC.top, bot:PC.bot, shoes:PC.shoes, acc:PC.acc.slice()};
+	// higher value creates more feminine characters in general
+	var fembias = $("#sliderfembias").slider("option","value");
+
+	// make new character
+	PC = da.createRandomCharacter(fembias);
+	// wear the previous clothes again
+	PC.top = currentlyWorn.top;
+	PC.bot = currentlyWorn.bot;
+	PC.shoes = currentlyWorn.shoes;
+	PC.acc = currentlyWorn.acc;
+
+	redrawPage(PC);
+});
+
+
+
+// EXAMPLE extending the default Player object
+// create additional core stat of int (intelligence) with default value of 5
+da.defaultStats["int"] = 5;
+// give the stat some bounds and distribution
+da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5};
+// give it some bias (positive means more feminine characters will have higher score)
+da.Player.femBias["int"] = 0.3;	// females have slightly greater intelligence on average
+
+
+// EXAMPLE creating a specific Player object (either the PC or an NPC)
+var PC = new da.Player({
+	name 		: "Genesis",
+	fullname 	: "HAL 9001",
+	gender 		: "female",
+	occupation 	: "Pod Bay Opener",
+	// provide specific values here to override the default ones set
+	str			: 5,
+	dex			: 5,
+	con			: 5,
+	wil			: 5,
+	age			: 26,
+
+	lips		:6,
+	breast 		:2,
+	hips 		:4,
+	hair 		:2,
+	fem 		:7,
+	sub 		:2,
+	butt 		:3,
+	eyes 		:8,
+	face 		:6,
+	skin 		:7,
+
+	// physique and mods have to be overriden like this
+	Mods 		: Object.assign({}, da.defaultMods, {
+		// doesn't matter if the property names are wrapped in quotes or not
+		"amazon":0,
+		"breasts":4,
+		"penis":-5,
+		"testes":-6,
+		"eyes":3,
+		"lips":2,
+		"lipw":-3,
+		"lipt":2,
+		"liph":-1,
+		"lipc":3,
+		"fem":1,
+		"sub":2,
+		"waist":2,
+		"ass":-2,
+		"legl":-2,
+		"eyec":-1,
+		"skinc":6,
+		"noseskew":0,
+		"penist":-1
+	}),
+	physique 	: Object.assign({}, da.defaultPhysique, {
+		"hairc":-5,
+		"hairstyle":4,
+		"height":6,
+		"irisc":-20,
+		"hairlength":19,
+		"nipples":6.8,
+	}),
+});
+
+
+// see that our new stat of intelligence is defined
+console.log("our extended stat of int:", PC.int);
+
+// EXAMPLE how to add a canvas to the HTML
+var canvas_holder = document.getElementById("testbody");
+// getting it for the first time, so create it with those style overrides
+var canvas = da.getCanvas("player_avatar", {
+	parent:canvas_holder,
+	border:"1px solid black",
+});
+
+// EXAMPLE how to draw our character to that canvas
+da.drawfigure("player_avatar", PC);
+
+
+
+
+
+// tester code (not a direct demonstration of API)
+var chargen = $("#chargen");
+var holder = $('<div class="slider-holder" id="femalebias"></div>').appendTo(chargen);
+var orig = $('<div class="origstat">female bias</div>').appendTo(holder);
+var s = $('<div id="sliderfembias" class="slider"></div>').appendTo(holder).slider({value: 0,
+	min:-1,max:1, step:0.01,
+	slide:function(event, ui){
+		$("#curfembias").text(Math.round(ui.value*100)/100);
+		da.drawfigure('player_avatar', PC, true);
+}});
+var cur = $(['<div class="curstat" id="curfembias">',0,'</div>'].join("")).appendTo(holder);
+// print stats of character so you can recreate it
+Object.defineProperty(JSON, "reviveWrapper", {
+	configurable : true,
+	writable     : true,
+	value        : function (code) {
+		"use strict";
+		if (typeof code !== "string") {
+			throw new TypeError("JSON.reviveWrapper code parameter must be a string");
+		}
+		return [ "(revive:eval)", code ];
+	}
+});
+
+function showCurPhysique() {
+	for (var p in PC.physique) {
+		$("#cur"+p).text(Math.round(PC.physique[p]*10)/10);
+		$("#slider"+p).slider("option","value",PC.physique[p]);
+	}
+}
+function showCurStats() {
+	for (var p in da.Player.statLimits) {
+		console.log(p);
+		$("#cur"+p+"stat").text(Math.round(PC[p]*10)/10);
+		$("#slider"+p+"stat").slider("option","value",PC[p]);
+	}
+}
+
+function redrawPage(PC) {
+
+	da.drawfigure('player_avatar', PC);
+	// create sliders for each physique
+	var sliderH = $("#slidersP");
+	sliderH.empty();
+	$('<button id="createchar">Make Character (eval)</button>').appendTo(sliderH);
+	for (var p in PC.physique) {
+		var holder = $('<div class="slider-holder" id="' + p + '"></div>').appendTo(sliderH);
+		var orig = $(['<div class="origstat">',p,' ',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
+		var s = $('<div id="slider'+p+'" class="slider"></div>').appendTo(holder).slider({value: PC.physique[p],min:da.Player.physiqueLimits[p].low,max:da.Player.physiqueLimits[p].high,
+			slide:function(p, event, ui){
+				PC.physique[p]=ui.value; 
+				$("#cur"+p).text(Math.round(PC.physique[p]*10)/10);
+				da.drawfigure('player_avatar', PC, true);
+		}.bind(null, p)});
+		var cur = $(['<div class="curstat" id="cur',p,'">',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
+	}
+
+	// create sliders for each stat
+	var sliderS = $("#slidersS");
+	sliderS.empty();
+	$('<div class="sliders-header">Core stats</div>').appendTo(sliderS);
+	for (var p in da.Player.statLimits) {
+		var holder = $('<div class="slider-holder" id="' + p + 'stat"></div>').appendTo(sliderS);
+		var orig = $(['<div class="origstat">',p,' ',PC[p],'</div>'].join("")).appendTo(holder);
+		var s = $('<div id="slider'+p+'stat" class="slider"></div>').appendTo(holder).slider({value: PC[p],min:da.Player.statLimits[p].low, max:da.Player.statLimits[p].high,
+			slide:function(p, event, ui){
+				PC[p]=ui.value; 
+				$("#cur"+p+"stat").text(PC[p]);
+				da.drawfigure('player_avatar', PC);
+				showCurPhysique();
+		}.bind(null, p)});
+		var cur = $(['<div class="curstat" id="cur',p,'stat">',PC[p],'</div>'].join("")).appendTo(holder);
+	}
+
+	// create slider for each mod
+	var sliderM = $("#slidersM");
+	sliderM.empty();
+	$('<div class="sliders-header">Modifiers</div>').appendTo(sliderM);
+	for (var p in PC.Mods) {
+		var holder = $('<div class="slider-holder" id="' + p + 'mod"></div>').appendTo(sliderM);
+		var orig = $(['<div class="origstat">',p,' ',PC.Mods[p],'</div>'].join("")).appendTo(holder);
+		var s = $('<div class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:-10, max:10,
+			slide:function(p, event, ui){
+				PC.Mods[p]=ui.value; 
+				$("#cur"+p+"mod").text(PC.Mods[p]);
+				// if it's standalone modifer, don't need to recalculate stats
+				var standaloneMod = !(PC.physique.hasOwnProperty(p) || PC.hasOwnProperty(p));
+				da.drawfigure('player_avatar', PC, standaloneMod);
+				showCurPhysique();
+		}.bind(null, p)});
+		var cur = $(['<div class="curstat" id="cur',p,'mod">',PC.Mods[p],'</div>'].join("")).appendTo(holder);
+	}
+
+	$("#createchar").click(function() {
+	var PCserialized = eval(JSON.stringify(PC))[1];
+	// eval PCserialized to revive PC
+	window.prompt("Copy to clipboard: Ctrl+C, Enter", PCserialized);
+});
+
+}
+
+// clothes need to be created so wait inside
+var currentlyWorn = {"top":null,"bot":null,"shoes":null};
+$(document).ready(function() {
+	// add a pattern
+	da.preloadPattern({name:"checkered", reptition:"repeat", format:"png", dataurl:"iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjE3NDQ1MDdCREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjE3NDQ1MDdDREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTc0NDUwNzlEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MTc0NDUwN0FEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz79WpsFAAAAJElEQVR42mL8//8/AxJgZGRE5jIx4AU0lWZE46O5dCCdBhBgAEU3BhAw4WsWAAAAAElFTkSuQmCC"});
+
+
+	var inv = $("#inventory");
+	// only show drawable clothes
+	for (var c in da.clothes) {
+		var hasDrawMethod = false;
+		var cc = da.clothes[c];
+		for (var p in da.clothes[c]) {
+			if (cc.hasOwnProperty(p) && p.startsWith("draw")) {
+				hasDrawMethod = true;
+				break;
+			}
+		}
+		if (hasDrawMethod) {
+			var ctag = $('<div class="clothes-holder" id="' + c + '"</div>').appendTo(inv);
+			ctag.text(c);
+			if (PC.isWearing(c)) {
+				ctag.addClass("wearing");
+				currentlyWorn[cc.loc] = ctag;
+			}
+
+			ctag.click(function(e, ctag, c) {
+				PC.changeClothes(c); 
+				ctag.toggleClass("wearing");
+				var cc = da.clothes[c];
+				// not accessory basically
+				if (currentlyWorn.hasOwnProperty(cc.loc)) {
+					if (currentlyWorn[cc.loc] === ctag) {
+						currentlyWorn[cc.loc] = null;
+					}
+					else {
+						if (currentlyWorn[cc.loc]) {
+							currentlyWorn[cc.loc].toggleClass("wearing");
+						}
+						currentlyWorn[cc.loc] = ctag;
+					}
+				}
+
+				da.drawfigure('player_avatar', PC, true);
+				showCurPhysique();
+			}.bind(null, null, ctag, c));
+		}
+	}
+
+	redrawPage(PC);
+});
+
+
+</script>
+</body>
+</html>
