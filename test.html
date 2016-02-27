@@ -46,7 +46,6 @@ $("#randomizechar").click(function() {
 
 // EXAMPLE extending the default Player object
 // create additional core stat of int (intelligence) with default value of 5
-da.defaultStats["int"] = 5;
 // give the stat some bounds and distribution
 da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5};
 // give it some bias (positive means more feminine characters will have higher score)
@@ -78,7 +77,7 @@ var PC = new da.Player({
 	skin 		:7,
 
 	// physique and mods have to be overriden like this
-	Mods 		: Object.assign({}, da.defaultMods, {
+	Mods 		: Object.assign({}, da.defaultMods(), {
 		// doesn't matter if the property names are wrapped in quotes or not
 		"amazon":0,
 		"breasts":4,
@@ -98,9 +97,10 @@ var PC = new da.Player({
 		"eyec":-1,
 		"skinc":6,
 		"noseskew":0,
-		"penist":-1
+		"penist":-1,
+		"browh":5,
 	}),
-	physique 	: Object.assign({}, da.defaultPhysique, {
+	physique 	: Object.assign({}, da.defaultPhysique(), {
 		"hairc":-5,
 		"hairstyle":4,
 		"height":6,

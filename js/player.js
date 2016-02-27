@@ -2,29 +2,18 @@
 // continue draw avatar module
 var da = (function(da){
 
+// create default stats from the avg of the stat limits
+function getDefault(limits) {
+	function run() {
+		var defaults = {};
+		for (var p in limits) {
+			defaults[p] = limits[p].avg;
+		}
+		return defaults;
+	}
+	return run;
+}
 
-var defaultStats = da.defaultStats = {
-		// core stats, with limits in Player.statLimits
-		str	: 5,
-		dex	: 5,
-		con	: 5,
-		wil	: 5,
-		age	: 18,
-		gender : "female",
-		hair	: 3,	// style and length
-		eyes	: 0,
-		face	: 3,
-		lips	: 3,
-		skin	: 3,
-		breast	: 3,
-		hips	: 3,
-		butt	: 3,
-		fem 	: 6,
-		sub 	: 5,
-
-		// vitals
-		arousal : 0,
-};
 var statLimits = {	// core stats, each with low, high, average, and stdev (assuming Normally distributed)
 	str	: {low:0, high:10, avg:5, stdev:2.5},
 	dex	: {low:0, high:10, avg:5, stdev:2.5},	// honestly, large chests don't do much for dexterity
@@ -34,7 +23,7 @@ var statLimits = {	// core stats, each with low, high, average, and stdev (assum
 	// they will be shown as 1 + their value so 1-12
 	age	: 		{low:0, high:1e9, avg:30, stdev:6},	// no real limit on age
 	hair	: 	{low:0, high:11, avg:4, stdev:3},	// style and length
-	eyes	: 	{low:0, high:11, avg:4, stdev:2},	// higher value is more seductive
+	eyes	: 	{low:0, high:11, avg:4, stdev:2,bias:1},	// higher value is more seductive
 	face	: 	{low:0, high:11, avg:5, stdev:2},	// higher value is better looking
 	lips	: 	{low:0, high:11, avg:4, stdev:3},
 	skin	: 	{low:0, high:11, avg:6, stdev:2,bias:1},	// higher value is better looking / fresher
@@ -58,29 +47,17 @@ var statDiscretePool = { 	// pool of available values for discrete properties
 };
 
 
-var defaultPhysique =  da.defaultPhysique = {
-		"hairc": 20,
-		"hairstyle": 3,
-		"height":6,
 
-		// special numbers 100 = red, 101 = blue
-		"irisc": -10,
-		"skin": 0,		
-		
-		// Body parts
-		"breastrows": 0,
-		"gentialscnt": 1,
-    };
 var physiqueLimits = {
 	hairc: 		{low:-5,high:120,avg:10,stdev:12},	// jet black to platinum blonde (40) to silver white (100) to pure white (~200)
 	hairstyle: 	{low:0,high:11,avg:4,stdev:3},					// bald (0) to parted at middle hair style (not 0)
-	height: 	{low:-10,high:25,avg:9,stdev:4},		// 4'5" (-10) to 5'7" (10) to 6'6" (25) (need some canvas teweaking?)
+	height: 	{low:-10,high:25,avg:6,stdev:4},		// 4'5" (-10) to 5'7" (10) to 6'6" (25) (need some canvas teweaking?)
 	irisc: 		{low:-20,high:100,avg:5,stdev:20},	// red (~-20) to brown (0) to green (10) to blue (20) to purple (40)
 	skin: 		{low:-20,high:50,avg:10,stdev:30},	// translucent (-20) to porcelein (-10) to fair (-5) to tanned (5) to brown (15) pure black (50)
 	breastrows: {low:0,high:0,avg:0,stdev:0},		// should only have 1 row...
 	gentialscnt:{low:0,high:2,avg:1,stdev:0.1},
 	face: 		{low:-8,high:28,avg:10,stdev:5},		// hypermasculine (-5) to androgenous (10) to feminine (25)
-	eyes: 		{low:-15,high:25,avg:0,stdev:2},		// squinty eyes (-15) to super surprise (25)
+	eyes: 		{low:-20,high:25,avg:0,stdev:15},		// squinty eyes (-15) to super surprise (25)
 	lips: 		{low:-20,high:40,avg:0,stdev:10},	// thin line (-20) to duck lips (40)
 	hairlength: {low:-1,high:100,avg:5,stdev:13},	// short (-1) to floor touching (100)
 	shoulders: 	{low:-4,high:60,avg:18,stdev:18},	// freakishly strong (-4) to boyish (15) to feminine (25) emaciated (60)
@@ -118,65 +95,44 @@ var physiqueAllowed = {
 };
 
 
-
-var defaultMods = da.defaultMods = {
-		// idosyncratic stats (random deviations for each person)
-		// could also be modified by items
-		amazon: 0,
-		breasts:0,
-		penis: 	0,
-		testes: 0,
-		eyes: 	0,
-		lips: 	0,
-		lipw: 	0,	// lip width
-		lipt: 	0, 	// lip thickness
-		liph: 	0, 	// lip height
-		lipc: 	0, 	// lip curl
-		fem: 	0,
-		sub: 	0,
-		waist: 	0,	// positive is narrower
-		ass: 	0,	
-		legl: 	0,	// how long their legs are (proportion of body that is legs) 
-		eyec: 	0,	// eye curl (positive produces / slant, negative \ slant) [-4,10]
-		skinc: 	0,	// skin color, positive is darker
-		noseskew:0,	// positive means nose starts on the right
-		penist: 0,	// penis thickness
-	};
-// only put numerical idiosyncratic values here
+// idosyncratic stats (random deviations for each person)
+// could also be modified by items
+// only put numerical values here
 var modLimits = {
 	breasts: 	{low:-1e9,high:1e9,avg:0,stdev:2},
 	penis: 		{low:-1e9,high:1e9,avg:0,stdev:2, bias:-6},	// override here since for modifiers, higher penis actually results in lower physique.penis
 	testes: 	{low:-1e9,high:1e9,avg:-1,stdev:1, bias:-4},	// same here as well
-	eyes: 		{low:-1e9,high:1e9,avg:0,stdev:1},
+	eyes: 		{low:-1e9,high:1e9,avg:0,stdev:15},
 	lips: 		{low:-1e9,high:1e9,avg:0,stdev:1},
-	lipw: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	lipt: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	liph: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	lipc: 		{low:-3,high:1e9,avg:2,stdev:2},	// anything below -3 is just too creepy
+	lipw: 		{low:-1e9,high:1e9,avg:0,stdev:2}, 	// lip width
+	lipt: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip thickness
+	liph: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip height
+	lipc: 		{low:-3,high:1e9,avg:2,stdev:2},	 // lip curl; anything below -3 is just too creepy
 	fem: 		{low:-1e9,high:1e9,avg:0,stdev:1},
 	sub: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	waist: 		{low:-1e9,high:1e9,avg:0,stdev:2},
+	waist: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// positive is narrower
 	ass: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	legl: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	eyec: 		{low:-1e9,high:1e9,avg:0,stdev:2},
-	noseskew: 	{low:-1e9,high:1e9,avg:0,stdev:2},
+	legl: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// how long their legs are (proportion of body that is legs) 
+	eyec: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// eye curl (positive produces / slant, negative \ slant)
+	noseskew: 	{low:-1e9,high:1e9,avg:0,stdev:2},		// positive means nose starts on the right
 	skinc: 		{low:-1e9,high:1e9,avg:10,stdev:15},	// this is the "natural skin color"
-	penist: 	{low:-10, high:1e9,avg:0,stdev:2},
+	penist: 	{low:-10, high:1e9,avg:0,stdev:2},		// penis thickness
+	browh: 		{low:2, high:20, avg:5,stdev:1},		// eyebrow height
+	browt: 		{low:-10, high:20, avg:0,stdev:1},		// eyebrow tilt
+	browc: 		{low:-10, high:20, avg:2,stdev:1},		// eyebrow curl
 };
 // fill out modifier for numerical stats if they don't exist
 (function(){
-	for (var p in da.defaultStats) {
-		if (!isNaN(defaultStats[p]) && !defaultMods.hasOwnProperty(p)) {
+	for (var p in statLimits) {
+		if (!modLimits.hasOwnProperty(p)) {
 			console.log("filling out mod", p);
-			defaultMods[p] = 0;
 			// default
 			modLimits[p] = {low:-1e9, high:1e9, avg:0, stdev:1, bias:0};
 		}
 	}
 	for (p in physiqueLimits) {
-		if (!defaultMods.hasOwnProperty(p)) {
+		if (!modLimits.hasOwnProperty(p)) {
 			console.log("filling out mod", p);
-			defaultMods[p] = 0;
 			// default
 			modLimits[p] = {low:-1e9, high:1e9, avg:0, stdev:1, bias:0};
 		}
@@ -184,16 +140,59 @@ var modLimits = {
 }())
 
 
+// for bias, if not defined then default to 1 - it means females tend to get higher values
+// otherwise, 0 means unisex, and a negative number means more affected by high masculinity
+var femBias = {
+	// core stats
+	age:0,
+	str:-0.5,
+	dex:-0.3,
+	con:-0.2,
+	wil:0,
+	eyes:5,
+	breast:2,
+	skin:2,
+	fem:2,
+	sub:2,
+	// physiques
+	hairc:0,
+	height:-2,
+	gentialscnt:0,
+	face:3,
+	eyes:3,
+	lips:3,
+	hairlength:3,
+	shoulders:1.5,
+	breasts:5,
+	testes:2,
+	penis:2,
+	waist:2,
+	legs:3,
+	// idiosyncracies
+	skinc:-3,
+	lipw:2,
+	lipt:3,
+	liph:0,
+	lipc:0,
+	legl:0,
+	eyec:0,
+	noseskew:0,
+	penist:-2,
+	browh:0,
+};
 
 
-
+// used to generate default values
+var defaultStats = da.defaultStats = getDefault(statLimits);
+var defaultPhysique = da.defaultPhysique = getDefault(physiqueLimits);
+var defaultMods = da.defaultMods = getDefault(modLimits);
 // class definition for Player
 var Player = da.Player = function(data) {
 	Object.assign(this, {	// default value construction; overriden by properties of data passed in
 		// modifiers
-		Mods 	: defaultMods,
+		Mods 	: defaultMods(),
 		// physique for drawing
-		physique: defaultPhysique,
+		physique: defaultPhysique(),
 				
 		// inventory
 		top		: "",
@@ -212,7 +211,7 @@ var Player = da.Player = function(data) {
 		piercings 	: [],
 		fetishes 	: [],
 		traits		: [],
-	}, defaultStats, data);
+	}, defaultStats(), data);
 };
 // first define as local variable to avoid circular referencing
 // purpose is to put them close to each other on top for ease of use
@@ -221,7 +220,7 @@ Player.modLimits = modLimits;
 Player.physiqueLimits = physiqueLimits;
 Player.physiqueAllowed = physiqueAllowed;
 Player.statDiscretePool = statDiscretePool;
-
+Player.femBias = femBias;
 
 
 // ---- player drawing functions ----
@@ -292,7 +291,7 @@ Player.prototype.changeClothes = function(clothesName) {
 			this[cc.loc] = "";
 
 		// reset the previoiusly applied modifiers
-		for (var mod in defaultMods) {
+		for (var mod in modLimits) {
 			if (cc.hasOwnProperty(mod) && !isNaN(cc[mod])) {
 				this.Mods[mod] -= cc[mod];
 			}
@@ -312,7 +311,7 @@ Player.prototype.changeClothes = function(clothesName) {
 		} 
 
 		// apply modifiers
-		for (var mod in defaultMods) {
+		for (var mod in modLimits) {
 			if (cc.hasOwnProperty(mod) && !isNaN(cc[mod])) {
 				console.log("adding",cc[mod],mod);
 				this.Mods[mod] += cc[mod];
@@ -320,46 +319,6 @@ Player.prototype.changeClothes = function(clothesName) {
 		}
 	}
 }
-
-// for bias, if not defined then default to 1 - it means females tend to get higher values
-// otherwise, 0 means unisex, and a negative number means more affected by high masculinity
-Player.femBias = {
-	// core stats
-	age:0,
-	str:-0.5,
-	dex:-0.3,
-	con:-0.2,
-	wil:0,
-	eyes:2,
-	breast:2,
-	skin:2,
-	fem:2,
-	sub:2,
-	// physiques
-	hairc:0,
-	height:-2,
-	gentialscnt:0,
-	face:3,
-	eyes:3,
-	lips:3,
-	hairlength:3,
-	shoulders:1.5,
-	breasts:5,
-	testes:2,
-	penis:2,
-	waist:2,
-	legs:3,
-	// idiosyncracies
-	skinc:-3,
-	lipw:2,
-	lipt:3,
-	liph:0,
-	lipc:0,
-	legl:0,
-	eyec:0,
-	noseskew:0,
-	penist:-2,
-};
 
 
 

@@ -849,50 +849,49 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var y = 27;
 		
 		ex.eye = {};
-		ex.eye.incorner = {x:73 + x + c, y:y + 8 + d};
-		ex.eye.outcorner = {x:64.333 + x - c, y:y + 7.5 - c};
+		ex.eye.incorner = {x:74,y:35.3};
+		ex.eye.out = {x:64.333 + x - eyes/20, y:34.5 - eyes/18 -eyec*0.1};
 
-		if (eyes >= 10) {	// fixed eye drawing for more attractive eyes
-			// underside
-			ex.eye.out = {x:64.666 + x - d, y:y + 9 - b - eyec*0.3,
-				cp1:{x:69.333 + x, y:y + 11}};
+		ex.eye.in = {x:73.666 + x, y:y + 8.5 -d,
+			cp2:{x:71 + x, y: y + 6 - (b + c)*0.5 - 2}};
 
-			// outer corner
-			ex.eye.outcorner.cp1 = {x:62.333 + x,y: y + 8 - a};
-			
-			ex.eye.in = {x:73.666 + x, y:y + 8.5,
-				cp1:{x:65.333 + x - b, y: y + 5.5 - 2},
-				cp2:{x:71 + x - b, y: y + 5.5 -  2}};
+		if (eyes >= 10) {
+			ex.eye.out.y-= eyes*0.01;
+			ex.eye.in.cp1 = {x:ex.eye.out.x+1, y: y + 6 - (b + c)*0.7 - 2};			
 		}
-		else {	// original eye drawing computation
-			ex.eye.out = {x:64.666 + x, y:y + 9 - eyec*0.3,
-				cp1:{x:69.333 + x, y: y + 11}};
-
-			ex.eye.outcorner.cp1 = {x:62.333 + x, y: y + 8 - b};
-											
-			ex.eye.in = {x:73.666 + x, y:y + 8.5 -d,
-				cp1:{x:65.333 + x, y: y + 5.5 - (b + c) - 2},
-				cp2:{x:71 + x, y: y + 5.5 - (b + c) - 2}};
+		else {												
+			ex.eye.in.cp1 = {x:65.333 + x, y: y + 6 - (b + c)*0.5 - 2};
 		}
+		
+
+		ex.eye.out.cp1 = {x:ex.eye.incorner.x-3, y:ex.eye.incorner.y+2};
+		ex.eye.out.cp2 = {x:ex.eye.out.x+2, y:ex.eye.out.y+2};
+
+		if (eyes < -14) {	// ultra squinty
+			ex.eye.in.cp1 = {x:ex.eye.out.x+3, y: ex.eye.out.y-2};
+			ex.eye.in.cp1.y -= eyes/10;
+			ex.eye.in.cp2.y -= eyes/10;
+		}
+
 
 		ctx.moveTo(ex.eye.incorner.x, ex.eye.incorner.y);
-		ctx.quadraticCurveTo(ex.eye.out.cp1.x, ex.eye.out.cp1.y,
-			 				ex.eye.out.x, ex.eye.out.y);	
-		ctx.quadraticCurveTo(ex.eye.outcorner.cp1.x, ex.eye.outcorner.cp1.y,
-						 ex.eye.outcorner.x, ex.eye.outcorner.y);	
+
+		ctx.bezierCurveTo(ex.eye.out.cp1.x, ex.eye.out.cp1.y,
+			ex.eye.out.cp2.x, ex.eye.out.cp2.y,
+			ex.eye.out.x, ex.eye.out.y);
+
 		ctx.bezierCurveTo(ex.eye.in.cp1.x, ex.eye.in.cp1.y,
 			ex.eye.in.cp2.x, ex.eye.in.cp2.y, 
 			ex.eye.in.x, ex.eye.in.y);	
 
-
-		ex.eye.tearduct = {x:73+x, y:y+8};
+		ex.eye.tearduct = {x:ex.eye.incorner.x+0.4, y:ex.eye.incorner.y+1.2};
 		ctx.lineTo(ex.eye.tearduct.x, ex.eye.tearduct.y);	//73,28)
 	}
 	
 	function drawEyelids(ctx)
 	{
 		ctx.beginPath();
-		
+
 		/*Eyes*/
 		var a = eyes / 6;
 		var b = a / 2;
@@ -902,34 +901,39 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var x = face / 20;
 		var y = 27;
 		
-		ctx.moveTo(ex.eye.outcorner.x, ex.eye.outcorner.y);
+		ctx.moveTo(ex.eye.out.x, ex.eye.out.y);
 		ctx.bezierCurveTo(65.333 + x - a,
 											y + 5.5 - 3 - a,
 											71 + x + b,
 											y + 5.5 -  2 - a,
 											ex.eye.in.x,
 											ex.eye.in.y);
-		ctx.bezierCurveTo(71 + x - b, 
-											y + 5.5 - 2,
-											65.333 + x - b,
-											y + 5.5 -  2, ex.eye.outcorner.x+1, ex.eye.outcorner.y);
+		ctx.bezierCurveTo(ex.eye.in.cp2.x -eyes/15, ex.eye.in.cp2.y +eyes/10,
+			ex.eye.in.cp1.x +eyes/8, ex.eye.in.cp1.y +eyes/10,
+			ex.eye.out.x+1, ex.eye.out.y);
 		// ctx.lineTo(73 + x, y + 8);	//73,28)
 	}
 	function drawIris(ctx)
 	{
 		ctx.beginPath();
 		
-		/*Iris*/
-		var a = eyes / 5.3;
-		var b = a / 2;
-		var c = a / 3;
-		var d = a / 5;
-		var e = eyes / 80;
 		var x = face / 20;
 		var y = 27 - eyes*0.04;
 		
-		ex.iris = {x:68.7 + x + e, y:y + 7.1};
+		ex.iris = {x:68.7 + x, y:y + 7.1};
 		ctx.arc(ex.iris.x, ex.iris.y, 1.7, 0, Math.PI*2, true);
+	}
+	function drawEyebrows(ctx) {
+		ctx.beginPath();
+		ctx.fillStyle = HAIRCOLOR;
+		ctx.strokeStyle = HAIRCOLOR;
+
+		ex.eyebrow = {};
+
+		ex.eyebrow.in = {x:ex.eye.in.x, y:ex.eye.in.y -browh};
+		ex.eyebrow.out = {x:ex.eye.out.x, y:ex.eye.out.y -browh};
+		ctx.moveTo(ex.eyebrow.in.x, ex.eyebrow.in.y);
+		ctx.lineTo(ex.eyebrow.out.x, ex.eyebrow.out.y);
 	}
 	
 	function drawLips(ctx)
@@ -1582,17 +1586,26 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.restore();
 
 
+		ctx.save();
 		ctx.fillStyle = EYECOLOR;
 		drawEyes(ctx);
 		ctx.fill();
+		ctx.clip();
 		ctx.fillStyle = IRISCOLOR;
 		drawIris(ctx);
 		ctx.fill();
+		ctx.restore();
+
+		// strokes for eyes
 		ctx.strokeStyle = EYELINER;
 		drawEyes(ctx);
 		ctx.stroke();
 		ctx.fillStyle = EYELINER;
 		drawEyelids(ctx);
+		ctx.fill();
+
+		drawEyebrows(ctx);
+		ctx.stroke();
 		ctx.fill();
 	}
 	
@@ -1662,6 +1675,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	var eyec = typeof id["eyec"] !== 'undefined' ? id["eyec"] : missingData = true;
 	var noseskew = typeof id["noseskew"] !== 'undefined' ? id["noseskew"] : missingData = true;
 	var penist = typeof id["penist"] !== 'undefined' ? id["penist"] : missingData = true;
+	var browh = typeof id["browh"] !== 'undefined' ? id["browh"] : missingData = true;
 
 	// DRAW POINTS defined (x,y) for specific body points so we have unified calculations
 	// these are calculated once in a core function and then referenced in other functions
