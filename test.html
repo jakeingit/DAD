@@ -104,9 +104,21 @@ var PC = new da.Player({
 		"hairc":-5,
 		"hairstyle":4,
 		"height":6,
-		"irisc":-20,
 		"hairlength":19,
 		"nipples":6.8,
+		eyecolor:function(ctx, ex) {
+			var grd = ctx.createRadialGradient(ex.iris.x, ex.iris.y, ex.iris.r*3, ex.iris.x, ex.iris.y, ex.iris.r);
+			grd.addColorStop(1, "rgb(20, 200, 100)");
+			grd.addColorStop(0.2, "	rgb(255,215,0)");
+			return grd;
+		},
+		irisc:function(ctx, ex){
+			var grd = ctx.createLinearGradient(ex.iris.x-ex.iris.r, ex.iris.y, ex.iris.x+ex.iris.r, ex.iris.y);
+			grd.addColorStop(0, "rgba(0,0,0,0)");
+			grd.addColorStop(0.5, "black");
+			grd.addColorStop(1, "rgba(0,0,0,0)");
+			return grd;
+		},
 	}),
 });
 
@@ -120,7 +132,7 @@ var canvas_holder = document.getElementById("testbody");
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
-	width:1000,
+	width:900,
 	height:1500,
 });
 
@@ -194,7 +206,7 @@ function redrawPage(PC) {
 	var sliderH = $("#slidersP");
 	sliderH.empty();
 	$('<button id="createchar">Make Character (eval)</button>').appendTo(sliderH);
-	var sortedProperties = getSortedKeys(PC.physique);
+	var sortedProperties = getSortedKeys(da.Player.physiqueLimits);
 	for (var i = 0; i < sortedProperties.length; ++i) {
 		var p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + '"></div>').appendTo(sliderH);

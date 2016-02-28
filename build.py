@@ -19,11 +19,14 @@ class ModuleChangeEventHandler(FileSystemEventHandler):
 		p = self.params
 
 		# depending on compilation option here
-		if p.compile == "jsmin":
+		if p.compile in ["jsmin", "none"]:
 			with open(p.dest, "w") as of:
 				for srcfile in p.source:
 					with open(p.path + srcfile, "r") as src:
-						of.write(jsmin(src.read()))	
+						if p.compile == "jsmin":
+							of.write(jsmin(src.read()))	
+						else:
+							of.write(src.read())
 
 		# advanced compilation is too aggressive and kills the properties I want to export
 		elif p.compile == "closure":
@@ -56,6 +59,7 @@ def parse_args(ns=None):
 
 	parser.add_argument("-c", "--compile",
 		default="jsmin",
+		choices=["none","jsmin","closure"],
 		help="choice of compiler to minify and optimize the source;\
 		default: %(default)s")
 

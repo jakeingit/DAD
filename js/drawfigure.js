@@ -869,8 +869,10 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		if (eyes < -14) {	// ultra squinty
 			ex.eye.in.cp1 = {x:ex.eye.out.x+3, y: ex.eye.out.y-2};
-			ex.eye.in.cp1.y -= eyes/10;
-			ex.eye.in.cp2.y -= eyes/10;
+			ex.eye.in.cp1.y -= eyes/25;
+			ex.eye.in.cp2.y -= eyes/25;
+			ex.eye.out.y += eyes/20;
+			ex.eye.out.x += eyes/20;
 		}
 
 
@@ -913,15 +915,24 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.eye.out.x+1, ex.eye.out.y);
 		// ctx.lineTo(73 + x, y + 8);	//73,28)
 	}
+	function calcIris() {	// need to do this before drawing eyes in case ex.iris's position is needed
+		var x = face / 20;
+		var y = 27 - eyes*0.04;
+		
+		ex.iris = {x:68.7 + x, y:y + 7.1, r:1.7};
+		if (eyes < -14) {	// intense staring eyes
+			ex.iris.x += 0.2;
+			ex.iris.y += 0.3;
+		}		
+	}
 	function drawIris(ctx)
 	{
 		ctx.beginPath();
 		
-		var x = face / 20;
-		var y = 27 - eyes*0.04;
-		
-		ex.iris = {x:68.7 + x, y:y + 7.1};
-		ctx.arc(ex.iris.x, ex.iris.y, 1.7, 0, Math.PI*2, true);
+		ctx.arc(ex.iris.x, ex.iris.y, ex.iris.r, 0, Math.PI*2, true);
+
+		if (typeof IRISCOLOR === "function") ctx.fillStyle = IRISCOLOR(ctx, ex);
+		else ctx.fillStyle = IRISCOLOR;
 	}
 	function drawEyebrows(ctx) {
 		ctx.beginPath();
@@ -961,7 +972,10 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.fillStyle = LIPCOLOR;
 		ctx.strokeStyle = LIPCOLOR;
 		ctx.beginPath();
+
+		ex.mouth = {};
 		
+
 		/*Lips*/
 		var a = lips / 2.4;
 		if (a < 0.6) a = 0.6;
@@ -971,20 +985,51 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var e = a / 10;
 		var y = -0.17;
 		
-		ex.centermouth = {x:79+lipw*0.1, y:50+liph*0.1 + lipc*0.1}; // positive curl moves it down into :(
-		ctx.moveTo(ex.centermouth.x, ex.centermouth.y);
+		ex.mouth.mid = {x:79+lipw*0.1, y:50+liph*0.1 + lipc*0.1};
 
-		ex.leftmouth = {x:76 - d -lipw*0.1, y:ex.centermouth.y - (y + (e / 2))};
-		ctx.quadraticCurveTo(77 + e, ex.centermouth.y - (e * 1.2) -lipt*0.1 -lipc*0.2, ex.leftmouth.x, ex.leftmouth.y);
+
+		ex.mouth.left = {x:76 - d -lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
 		// center to left
 
-		ex.rightmouth = {x:82 + d+lipw*0.1, y:ex.centermouth.y - (y + (e / 2))};
-		ctx.quadraticCurveTo(79, ex.centermouth.y + 1.1 + d +lipt*0.1 -lipc*0.1, ex.rightmouth.x, ex.rightmouth.y);
+		ex.mouth.right = {x:82 + d+lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
 		// left to right
 
-		ctx.quadraticCurveTo(81 - e, ex.centermouth.y - (e * 1.2) -lipt*0.1 -lipc*0.2, ex.centermouth.x, ex.centermouth.y);
-		ctx.lineWidth = 2.3 + (lips / 40);
-		// right back to center
+		if (lips < -10 || lipt < -3 || (lipw > lips*1.5)) {	// very thin lips
+			ctx.moveTo(ex.mouth.left.x, ex.mouth.left.y);
+
+			ctx.bezierCurveTo(ex.mouth.left.x+2, ex.mouth.left.y -lipc*0.2,
+				ex.mouth.right.x-2, ex.mouth.right.y -lipc*0.2,
+				ex.mouth.right.x, ex.mouth.right.y);
+			ctx.lineWidth = 1.5;
+			ctx.stroke();
+
+			ctx.beginPath();
+			ctx.moveTo(ex.mouth.mid.x-1, ex.mouth.mid.y+2);
+			ctx.lineTo(ex.mouth.mid.x+2, ex.mouth.mid.y+2);
+			ctx.lineWidth = 0.5;
+			ctx.stroke();
+			// ctx.lineCap = "butt";
+
+		}
+		else {
+			ex.mouth.mid.cp1 = {x:81 - e, y:ex.mouth.mid.y - (e * 1.2) -lipt*0.1 -lipc*0.2}; // positive curl moves it down into :(
+			ex.mouth.left.cp1 = {x:77 + e, y:ex.mouth.mid.y - (e * 1.2) -lipt*0.1 -lipc*0.2};
+			ex.mouth.right.cp1 = {x:79, y:ex.mouth.mid.y + 1.1 + d +lipt*0.1 -lipc*0.1};
+
+
+			ctx.moveTo(ex.mouth.mid.x, ex.mouth.mid.y);
+
+			ctx.quadraticCurveTo(ex.mouth.left.cp1.x, ex.mouth.left.cp1.y, 
+				ex.mouth.left.x, ex.mouth.left.y);
+
+			ctx.quadraticCurveTo(ex.mouth.right.cp1.x, ex.mouth.right.cp1.y, ex.mouth.right.x, ex.mouth.right.y);
+
+			ctx.quadraticCurveTo(ex.mouth.mid.cp1.x, ex.mouth.mid.cp1.y, ex.mouth.mid.x, ex.mouth.mid.y);
+			
+			ctx.lineWidth = 2.3 + (lips / 40);
+		}
+
+		ctx.miterLimit = 5;
 		
 		ctx.stroke();
 	}
@@ -1606,12 +1651,14 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.restore();
 
 
+
+		calcIris();
 		ctx.save();
-		ctx.fillStyle = EYECOLOR;
 		drawEyes(ctx);
+		if (typeof EYECOLOR === "function") ctx.fillStyle = EYECOLOR(ctx, ex);
+		else ctx.fillStyle = EYECOLOR;
 		ctx.fill();
 		ctx.clip();
-		ctx.fillStyle = IRISCOLOR;
 		drawIris(ctx);
 		ctx.fill();
 		ctx.restore();
@@ -1670,6 +1717,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	var height = typeof stats["height"] !== 'undefined' ? stats["height"] : missingData = true; 
 	var face = typeof stats["face"] !== 'undefined' ? stats["face"] : missingData = true;
 	var eyes = typeof stats["eyes"] !== 'undefined' ? stats["eyes"] : missingData = true;
+	var eyecolor = typeof stats["eyecolor"] !== 'undefined' ? stats["eyecolor"] : missingData = true;
 	var irisc = typeof stats["irisc"] !== 'undefined' ? stats["irisc"] : missingData = true;
 	var lips = typeof stats["lips"] !== 'undefined' ? stats["lips"] : missingData = true;
 	var skin = typeof stats["skin"] !== 'undefined' ? stats["skin"] : missingData = true;
@@ -1725,13 +1773,15 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	var LIPCOLOR = "black";
 	var HAIRCOLOR = "black";
 	var HAIRCOLORB = "black";
-	var EYECOLOR = "white";
+	var EYECOLOR = eyecolor;
 	var IRISCOLOR = "brown";
 	var EYELINER = "black";
 	var NIPPLESHADOW = "black";
 	
 	// if they're NaN then we assume they are in a postprocessed form already and it's safe to directly assign
-	if (isNaN(irisc)) {
+	if (typeof irisc === "function") {
+		IRISCOLOR = irisc;
+	} else if (isNaN(irisc)) {
 		IRISCOLOR = irisc;
 	} else if (irisc < 11) {
 		IRISCOLOR = "rgb(" + Math.floor(92 - (irisc*5.2)) + "," + Math.floor(64 + (irisc*5.1)) + "," + Math.floor(51 - (irisc*1.1)) + ")";
@@ -1739,7 +1789,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var a = irisc - 10;
 		IRISCOLOR = "rgb(" + Math.floor(40 + (a * 4.9)) + "," + Math.floor(115 - (a * 2.6)) + "," + Math.floor(40 + (a * 13.1)) + ")";
 	}
-	
+
 	if (isNaN(skin)) {
 		SKINC = skin;
 		SKINCB = skin;
@@ -1780,7 +1830,11 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		EYELINER = SKINCB;
 	}
 	
-	if (isNaN(hairc)) {
+	if (typeof hairc === "function") {
+		HAIRCOLOR = hairc(ctx, false);
+		HAIRCOLORB = hairc(ctx, true);
+	}
+	else if (isNaN(hairc)) {
 		HAIRCOLOR = hairc;
 		HAIRCOLORB = hairc;
 	} else if (hairc < 0) {	// jet black

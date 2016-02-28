@@ -909,23 +909,13 @@ var drawThighSocks = da.drawThighSocks = function(stroke, pattern) {
 
 var drawMakeup = da.drawMakeup = function(lipcolor, nailcolor) {
 	function drawLipStick(ctx, ex, mods) {
-		/*Lips*/
 		var lips = this.lips;
-		var lipt = mods.lipt;
-		var lipc = mods.lipc;
-		var a = lips / 2.4;
-		if (a < 0.6) a = 0.6;
-		var d = a / 5;
-		var e = a / 10;
-	
-		// left corner of mouth
-		ctx.moveTo(ex.centermouth.x, ex.centermouth.y);
 
-		ctx.quadraticCurveTo(77 + e, ex.centermouth.y - (e * 1.2) -lipt*0.1 -lipc*0.2, ex.leftmouth.x, ex.leftmouth.y);
-		// center to left
-		ctx.quadraticCurveTo(79, ex.centermouth.y + 1.1 + d +lipt*0.1 -lipc*0.1, ex.rightmouth.x, ex.rightmouth.y);
-		// left to right
-		ctx.quadraticCurveTo(81 - e, ex.centermouth.y - (e * 1.2) -lipt*0.1 -lipc*0.2, ex.centermouth.x, ex.centermouth.y);
+		// just draw right over lips
+		ctx.moveTo(ex.mouth.mid.x, ex.mouth.mid.y);
+		ctx.quadraticCurveTo(ex.mouth.left.cp1.x, ex.mouth.left.cp1.y, ex.mouth.left.x, ex.mouth.left.y);
+		ctx.quadraticCurveTo(ex.mouth.right.cp1.x, ex.mouth.right.cp1.y, ex.mouth.right.x, ex.mouth.right.y);
+		ctx.quadraticCurveTo(ex.mouth.mid.cp1.x, ex.mouth.mid.cp1.y, ex.mouth.mid.x, ex.mouth.mid.y);
 		ctx.lineWidth = 2.3 + (lips / 40);
 	}
 	function drawNailPolish(ctx, ex, mods) {

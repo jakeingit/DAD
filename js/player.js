@@ -2,17 +2,7 @@
 // continue draw avatar module
 var da = (function(da){
 
-// create default stats from the avg of the stat limits
-function getDefault(limits) {
-	function run() {
-		var defaults = {};
-		for (var p in limits) {
-			defaults[p] = limits[p].avg;
-		}
-		return defaults;
-	}
-	return run;
-}
+
 
 var statLimits = {	// core stats, each with low, high, average, and stdev (assuming Normally distributed)
 	str	: {low:0, high:10, avg:5, stdev:2.5},
@@ -51,7 +41,7 @@ var statDiscretePool = { 	// pool of available values for discrete properties
 var physiqueLimits = {
 	hairc: 		{low:-5,high:120,avg:10,stdev:12},	// jet black to platinum blonde (40) to silver white (100) to pure white (~200)
 	hairstyle: 	{low:0,high:11,avg:4,stdev:3},					// bald (0) to parted at middle hair style (not 0)
-	height: 	{low:-10,high:25,avg:6,stdev:4},		// 4'5" (-10) to 5'7" (10) to 6'6" (25) (need some canvas teweaking?)
+	height: 	{low:-10,high:25,avg:6,stdev:3},		// 4'5" (-10) to 5'7" (10) to 6'6" (25) (need some canvas teweaking?)
 	irisc: 		{low:-20,high:100,avg:5,stdev:20},	// red (~-20) to brown (0) to green (10) to blue (20) to purple (40)
 	skin: 		{low:-20,high:50,avg:10,stdev:30},	// translucent (-20) to porcelein (-10) to fair (-5) to tanned (5) to brown (15) pure black (50)
 	breastrows: {low:0,high:0,avg:0,stdev:0},		// should only have 1 row...
@@ -93,6 +83,10 @@ var physiqueAllowed = {
 	ass: 		{},
 	legs: 		{},
 };
+// first element of discrete pools is the default
+var physiqueDiscretePool = {
+	eyecolor:["white"],
+};
 
 
 // idosyncratic stats (random deviations for each person)
@@ -102,12 +96,12 @@ var modLimits = {
 	breasts: 	{low:-1e9,high:1e9,avg:0,stdev:2},
 	penis: 		{low:-1e9,high:1e9,avg:0,stdev:2, bias:-6},	// override here since for modifiers, higher penis actually results in lower physique.penis
 	testes: 	{low:-1e9,high:1e9,avg:-1,stdev:1, bias:-4},	// same here as well
-	eyes: 		{low:-1e9,high:1e9,avg:0,stdev:15},
+	eyes: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	lips: 		{low:-1e9,high:1e9,avg:0,stdev:1},
 	lipw: 		{low:-1e9,high:1e9,avg:0,stdev:2}, 	// lip width
 	lipt: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip thickness
 	liph: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip height
-	lipc: 		{low:-3,high:1e9,avg:2,stdev:2},	 // lip curl; anything below -3 is just too creepy
+	lipc: 		{low:1,high:1e9,avg:2,stdev:2},	 // lip curl; anything below -3 is just too creepy
 	fem: 		{low:-1e9,high:1e9,avg:0,stdev:1},
 	sub: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	waist: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// positive is narrower
@@ -117,10 +111,10 @@ var modLimits = {
 	noseskew: 	{low:-1e9,high:1e9,avg:0,stdev:2},		// positive means nose starts on the right
 	skinc: 		{low:-1e9,high:1e9,avg:10,stdev:15},	// this is the "natural skin color"
 	penist: 	{low:-10, high:1e9,avg:0,stdev:2},		// penis thickness
-	browh: 		{low:10, high:35, avg:15,stdev:5,bias:0},		// eyebrow height
+	browh: 		{low:10, high:35, avg:16,stdev:5,bias:3},		// eyebrow height
 	browt: 		{low:-10, high:10, avg:1,stdev:2,bias:0},		// eyebrow tilt (higher value tilts more \/ way)
-	browc: 		{low:-10, high:20, avg:2,stdev:1,bias:3},		// eyebrow curl (higher value has higher arch)
-	browb: 		{low:0, high:100, avg:50,stdev:15,bias:0},		// eyebrow bending point (higher value bends closer to outside)
+	browc: 		{low:-10, high:20, avg:4,stdev:2,bias:2},		// eyebrow curl (higher value has higher arch)
+	browb: 		{low:0, high:100, avg:60,stdev:15,bias:0},		// eyebrow bending point (higher value bends closer to outside)
 	browv: 		{low:0, high:100, avg:30,stdev:15,bias:-20},		// eyebrow volume/thickness
 	browr: 		{low:0, high:100, avg:30,stdev:15,bias:20},		// eyebrow roundedness
 };
@@ -159,11 +153,11 @@ var femBias = {
 	sub:2,
 	// physiques
 	hairc:0,
-	height:-2,
+	height:-3,
 	gentialscnt:0,
 	face:3,
 	eyes:3,
-	lips:3,
+	lips:2,
 	hairlength:3,
 	shoulders:1.5,
 	breasts:5,
@@ -173,8 +167,8 @@ var femBias = {
 	legs:3,
 	// idiosyncracies
 	skinc:-3,
-	lipw:2,
-	lipt:3,
+	lipw:0,
+	lipt:4,
 	liph:0,
 	lipc:0,
 	legl:0,
@@ -185,9 +179,26 @@ var femBias = {
 };
 
 
+// create default stats from the avg of the stat limits
+function getDefault(limits, discretePool) {
+	function run() {
+		var defaults = {};
+		for (var p in limits) {
+			defaults[p] = limits[p].avg;
+		}
+
+		if (discretePool) {
+			for (p in discretePool) {
+				defaults[p] = discretePool[p][0];
+			}
+		}
+		return defaults;
+	}
+	return run;
+}
 // used to generate default values
 var defaultStats = da.defaultStats = getDefault(statLimits);
-var defaultPhysique = da.defaultPhysique = getDefault(physiqueLimits);
+var defaultPhysique = da.defaultPhysique = getDefault(physiqueLimits, physiqueDiscretePool);
 var defaultMods = da.defaultMods = getDefault(modLimits);
 // class definition for Player
 var Player = da.Player = function(data) {
@@ -330,19 +341,23 @@ Player.prototype.changeClothes = function(clothesName) {
 
 
 Player.prototype.clampStats = function() {
-	for (var p in Player.statLimits) {
+	for (var p in statLimits) {
 		this[p] = da.clamp(this[p], Player.statLimits[p].low, Player.statLimits[p].high);
 	}
 };
 Player.prototype.clampPhysique = function() {
-	for (var p in Player.physiqueLimits) {
+	for (var p in physiqueLimits) {
 		// this property is limited and the value is not explicitely allowed
-		if (!Player.physiqueAllowed[p].hasOwnProperty(this.physique[p])) {
+		if (!isNaN(this.physique[p]) && !Player.physiqueAllowed[p].hasOwnProperty(this.physique[p])) {
 			this.physique[p] = da.clamp(this.physique[p], Player.physiqueLimits[p].low, Player.physiqueLimits[p].high);
 		}
 	}
 };
-
+Player.prototype.clampMods = function() {
+	for (var p in modLimits) {
+		this.Mods[p] = da.clamp(this.Mods[p], modLimits[p].low, modLimits[p].high);
+	}
+}
 Player.prototype.getFem = function() {
 	return this.fem + this.Mods.fem;
 };
@@ -398,7 +413,7 @@ Player.prototype.calcTestes = function(considerMods) {
 	return val;
 };
 Player.prototype.calcPenis = function() {
-	var v = this.getFem()*1 + this.getSub()*1 - this.Mods.penis;
+	var v = -5 + this.getFem() + this.getSub()*0.2 - this.Mods.penis;
 	return v;
 };
 Player.prototype.calcWaist = function() {
@@ -512,6 +527,7 @@ var createRandomCharacter = da.createRandomCharacter = function(bias) {
 		var mod = Player.modLimits[m];
 		pc.Mods[m] = Math.round(da.randNormal(mod.avg + bias*getBiasMod(mod,m), mod.stdev));
 	}
+	pc.clampMods();
 
 	return pc;
 }

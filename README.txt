@@ -1,5 +1,4 @@
-[size=200]Step by step guide on including into your Twine game (or anything allowing Javascript)[/size]
-[spoiler][size=150]1. Download and Including into Game[/size]
+[size=150]1. Download and Including into Game[/size]
 
 Go to the IGDB link above and download the latest version.
 Extract into any folder.
@@ -33,7 +32,7 @@ var PC = new da.Player();
 The default Player isn't very interesting. We can construct the player while overriding some of its default values.
 Note that the properties you don't specify are initialized with the default value (we'll talk about it later):
 [code]
-PC = new da.Player({
+var PC = new da.Player({
 	name 		: "Genesis",
 	fullname 	: "HAL 9001",
 	gender 		: "female",
@@ -57,13 +56,13 @@ PC = new da.Player({
 	skin 		:7,
 
 	// physique and mods have to be overriden like this
-	Mods 		: Object.assign({}, da.defaultMods, {
+	Mods 		: Object.assign({}, da.defaultMods(), {
 		// doesn't matter if the property names are wrapped in quotes or not
 		"amazon":0,
 		"breasts":4,
 		"penis":-5,
 		"testes":-6,
-		"eyes":3,
+		"eyes":0,
 		"lips":2,
 		"lipw":-3,
 		"lipt":2,
@@ -77,9 +76,10 @@ PC = new da.Player({
 		"eyec":-1,
 		"skinc":6,
 		"noseskew":0,
-		"penist":-1
+		"penist":-1,
+		"browc":5,
 	}),
-	physique 	: Object.assign({}, da.defaultPhysique, {
+	physique 	: Object.assign({}, da.defaultPhysique(), {
 		"hairc":-5,
 		"hairstyle":4,
 		"height":6,
@@ -107,20 +107,17 @@ read on.
 All of this is done in your own Story Javascript, after copy pasting da.js into the top of it.
 
 Suppose we want to include a new core statistic to our Player prototype, intelligence, or int for short.
-We can do this by first setting a default value for it:
+We can do this by simply defining its distribution:
 [code]
 // create additional core stat of int (intelligence) with default value of 5
 da.defaultStats["int"] = 5;
 [/code]
 Then giving that stat some bounds and probability
 [code]
-da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5};
+da.Player.statLimits["int"] = {low:0, high:10, avg:5, stdev:2.5, bias:0.3};
 [/code]
-We could also optionally give the value some bias. Bias is mostly used when randomly generating a character. 
+Bias is mostly used when randomly generating a character. 
 Higher positive bias means more feminine characters will more likely have higher values for this stat.
-[code]
-da.Player.femBias["int"] = 0.3;	// females have slightly greater intelligence on average
-[/code]
 That's all you need to do for adding a new stat.
 
 Now you might want to change the way physiques are calculated to take into account your new stat.
@@ -137,11 +134,9 @@ The tester (test.html) is great for seeing whether your physique calculation mak
 Once you add the int stat in as well as change the way hairlength is calculated, moving the int slider will change the hair and you can immediately see how that stat affects the character!
 
 The procedure is similar if you'd like to add a modifier, which are values that change based on genetics (some people just have longer legs), items used, and worn clothing.
-Instead of assigning to defaultStats, you assign to defaultMods:
 [code]
-da.defaultMods["fat"] = 2;
-da.Player.modLimits["fat"] = {low:-1e9, high:1e9, avg:2, stdev:2};
-da.Player.femBias["fat"] = 0;	// both sexes are equally as fat on average
+da.Player.modLimits["fat"] = {low:-1e9, high:1e9, avg:2, stdev:2, bias:0};
+// both sexes are equally as fat on average
 [/code]
 
 Similarly let's change how the waist is drawn. This time, we're going to extend it without having to know how it was previously calculated:
