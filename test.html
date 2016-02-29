@@ -106,19 +106,8 @@ var PC = new da.Player({
 		"height":6,
 		"hairlength":19,
 		"nipples":6.8,
-		eyecolor:function(ctx, ex) {
-			var grd = ctx.createRadialGradient(ex.iris.x, ex.iris.y, ex.iris.r*3, ex.iris.x, ex.iris.y, ex.iris.r);
-			grd.addColorStop(1, "rgb(20, 200, 100)");
-			grd.addColorStop(0.2, "	rgb(255,215,0)");
-			return grd;
-		},
-		irisc:function(ctx, ex){
-			var grd = ctx.createLinearGradient(ex.iris.x-ex.iris.r, ex.iris.y, ex.iris.x+ex.iris.r, ex.iris.y);
-			grd.addColorStop(0, "rgba(0,0,0,0)");
-			grd.addColorStop(0.5, "black");
-			grd.addColorStop(1, "rgba(0,0,0,0)");
-			return grd;
-		},
+		eyecolor:"white",
+		irisc:-20,
 	}),
 });
 

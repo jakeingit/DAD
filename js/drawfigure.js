@@ -12,6 +12,35 @@ var reflectHorizontal = da.reflectHorizontal = function(ctx) {
 	ctx.translate(-78.6, -200);	
 };
 
+var drawPoints = da.drawPoints = function(ctx) {
+	// given ctx and a list of points, draw points between them based on how many control points are defined for each
+	// does not begin a path or fill or stroke (just moves pen between the points)
+	if (arguments.length < 2) return;	// not enough points to draw
+	var startPoint = arguments[1];	// first argument is ctx
+	// if null is passed through, just continue from last location
+	if (startPoint) {
+		ctx.moveTo(startPoint.x, startPoint.y);
+	}
+	// for every point after
+	for (var i = 2, len = arguments.length; i < len; ++i) {
+		var p = arguments[i];
+		if (p.hasOwnProperty("cp2")) {
+			ctx.bezierCurveTo(p.cp1.x, p.cp1.y, p.cp2.x, p.cp2.y, p.x, p.y, p.trace, p.traceSize);
+		}
+		else if (p.hasOwnProperty("cp1")) {
+			ctx.quadraticCurveTo(p.cp1.x, p.cp1.y, p.x, p.y, p.trace, p.traceSize);
+		}
+		else {
+			ctx.lineTo(p.x, p.y);
+		}
+	}
+};
+
+var tracePoint = da.tracePoint = function(point, radius) {
+	// add a trace to a drawpoint when giving to drawPoints function
+	return Object.assign({trace:true,traceSize:radius},point);
+}
+
 da.getCanvas = function(canvasName, styleOverride) {
 	/* 	get a canvas DOM element with id=canvasName, generating it if necessary
 	   	styleOverride is the additional/overriding css style object to apply over defaults
@@ -394,8 +423,8 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			cp1:{x:79, y:209+a-legl}};
 		var sp = da.splitQuadratic({p1:ex.mons.right, p2:ex.mons.left, cp1:ex.mons.left.cp1},0.5);
 		ex.mons.tip = sp.right.p1;
-		ctx.moveTo(ex.mons.right.x, ex.mons.right.y);
-		ctx.quadraticCurveTo(ex.mons.left.cp1.x, ex.mons.left.cp1.y, ex.mons.left.x, ex.mons.left.y);
+
+		drawPoints(ctx, ex.mons.right, ex.mons.left);
 	}
 	
 	function drawPregs(ctx){
@@ -505,10 +534,11 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var c = a / 3;
 		var d = a / 5;
 		
-		ex.botbellybutton = {x:80, y:155+d-legl};
-		ctx.moveTo(ex.botbellybutton.x, ex.botbellybutton.y-3);
-		ctx.quadraticCurveTo(ex.botbellybutton.x+2, ex.botbellybutton.y-2, ex.botbellybutton.x, 
-			ex.botbellybutton.y);
+		ex.bellybutton = {};
+		ex.bellybutton.bot = {x:80, y:155+d-legl};
+		ctx.moveTo(ex.bellybutton.bot.x, ex.bellybutton.bot.y-3);
+		ctx.quadraticCurveTo(ex.bellybutton.bot.x+2, ex.bellybutton.bot.y-2, ex.bellybutton.bot.x, 
+			ex.bellybutton.bot.y);
 		
 		ctx.stroke();
 	}
@@ -875,19 +905,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.eye.out.x += eyes/20;
 		}
 
-
-		ctx.moveTo(ex.eye.incorner.x, ex.eye.incorner.y);
-
-		ctx.bezierCurveTo(ex.eye.out.cp1.x, ex.eye.out.cp1.y,
-			ex.eye.out.cp2.x, ex.eye.out.cp2.y,
-			ex.eye.out.x, ex.eye.out.y);
-
-		ctx.bezierCurveTo(ex.eye.in.cp1.x, ex.eye.in.cp1.y,
-			ex.eye.in.cp2.x, ex.eye.in.cp2.y, 
-			ex.eye.in.x, ex.eye.in.y);	
-
 		ex.eye.tearduct = {x:ex.eye.incorner.x+0.4, y:ex.eye.incorner.y+1.2};
-		ctx.lineTo(ex.eye.tearduct.x, ex.eye.tearduct.y);	//73,28)
+
+		drawPoints(ctx, ex.eye.incorner, ex.eye.out, ex.eye.in, ex.eye.tearduct);
 	}
 	
 	function drawEyelids(ctx)
@@ -903,17 +923,16 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var x = face / 20;
 		var y = 27;
 		
-		ctx.moveTo(ex.eye.out.x, ex.eye.out.y);
-		ctx.bezierCurveTo(65.333 + x - a,
-											y + 5.5 - 3 - a,
-											71 + x + b,
-											y + 5.5 -  2 - a,
-											ex.eye.in.x,
-											ex.eye.in.y);
-		ctx.bezierCurveTo(ex.eye.in.cp2.x -eyes/15, ex.eye.in.cp2.y +eyes/10,
-			ex.eye.in.cp1.x +eyes/8, ex.eye.in.cp1.y +eyes/10,
-			ex.eye.out.x+1, ex.eye.out.y);
-		// ctx.lineTo(73 + x, y + 8);	//73,28)
+		ex.eye.lid = {};
+		ex.eye.lid.in = {x:ex.eye.in.x, y: ex.eye.in.y,
+			cp1:{x:65.333 + x - a, y: y + 5.5 - 3 - a},
+			cp2:{x:71 + x + b, y: y + 5.5 -  2 - a}};
+
+		ex.eye.lid.out = {x:ex.eye.out.x+1, y:ex.eye.out.y,
+			cp1:{x:ex.eye.in.cp2.x -eyes/15, y:ex.eye.in.cp2.y +eyes/10},
+			cp2:{x:ex.eye.in.cp1.x +eyes/8, y:ex.eye.in.cp1.y +eyes/10}};
+
+		drawPoints(ctx, ex.eye.out, ex.eye.lid.in, ex.eye.lid.out);
 	}
 	function calcIris() {	// need to do this before drawing eyes in case ex.iris's position is needed
 		var x = face / 20;
@@ -946,25 +965,20 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		ex.brow.in = {x:ex.eye.in.x, y:ex.eye.in.y -browh*0.3 +browt*0.3};
 		ex.brow.out = {x:ex.eye.out.x, y:ex.eye.out.y -browh*0.3 -browt*0.3};
-		ctx.moveTo(ex.brow.out.x, ex.brow.out.y);
 		// decide where along the brow the sharp bend occurs
 		var bendpoint = browb/100;	// assuming browb [0,100]
 		ex.brow.in.cp1 = {x:bendpoint*ex.brow.in.x+(1-bendpoint)*ex.brow.out.x,
 			y:bendpoint*ex.brow.in.y+(1-bendpoint)*ex.brow.out.y -browc*0.4};
 
-		ctx.quadraticCurveTo(ex.brow.in.cp1.x, ex.brow.in.cp1.y,
-			ex.brow.in.x, ex.brow.in.y);
 
 		// gently go down to the bottom or go straight down
 		ex.brow.bot = {x:ex.brow.in.x, y:ex.brow.in.y +browv*0.02};
 		ex.brow.bot.cp1 = {x:ex.brow.in.x +browr*0.015, y:ex.brow.bot.y/2 + ex.brow.in.y/2};	
-		ctx.quadraticCurveTo(ex.brow.bot.cp1.x, ex.brow.bot.cp1.y,
-			ex.brow.bot.x, ex.brow.bot.y);
-
 		ex.brow.out.cp1 = {x:bendpoint*ex.brow.in.x+(1-bendpoint)*ex.brow.out.x,
 			y:bendpoint*ex.brow.in.y+(1-bendpoint)*ex.brow.out.y -browc*0.4}
-		ctx.quadraticCurveTo(ex.brow.out.cp1.x, ex.brow.out.cp1.y,
-			ex.brow.out.x, ex.brow.out.y);
+
+
+		drawPoints(ctx, ex.brow.out, ex.brow.in, ex.brow.bot, ex.brow.out);
 	}
 	
 	function drawLips(ctx)
@@ -1192,22 +1206,23 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ex.wrist = {};
 		ex.thumb = {};
 
+		ex.neck.nape = {x:79, y:48};
 		if (a < 11) {
-			ctx.moveTo(79, 48);
 			ex.neck.top = {x:62 + b + d, y:48};
 			ctx.lineTo(ex.neck.top.x, ex.neck.top.y);
 
-			ex.neck.cusp = {x:62 + b + d, y:68 - b};
-			ctx.quadraticCurveTo(61 + e + b + d, 58 - b, ex.neck.cusp.x, ex.neck.cusp.y);
+
+			ex.neck.cusp = {x:62 + b + d, y:68 - b,
+				cp1:{x:61 + e + b + d, y:58 - b}};
 
 			// top of where you can see trapezius muscle
 			ex.trapezius = {};
 			ex.trapezius.top = {x:62 + b + d, y:58 + b};
-			ctx.lineTo(ex.trapezius.top.x, ex.trapezius.top.y);
-
 			ex.collarbone = {x:41 + b, y:72 - d,
 				cp1:{x:50 + b, y:64 + b}};
-			ctx.quadraticCurveTo(ex.collarbone.cp1.x, ex.collarbone.cp1.y , ex.collarbone.x, ex.collarbone.y);
+
+			drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
+				ex.trapezius.top, ex.collarbone);
 
 			if (a < 6) ctx.quadraticCurveTo(39 + b, 70 + d + d, 37 + b, 72 + d);
 
@@ -1215,67 +1230,54 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.shoulder = {x:14 + f, y:110 - (a + d),
 				cp1:{x:16 + f, y:74},
 				cp2:{x:9 + f + a, y:88 - a}};
-			ctx.bezierCurveTo(ex.shoulder.cp1.x, ex.shoulder.cp1.y, 
-				ex.shoulder.cp2.x, ex.shoulder.cp2.y,
-				ex.shoulder.x, ex.shoulder.y);
 
-			ctx.lineTo(13 + f + e, 100 - d);	// shoulder muscle details (deltoids)
+			ex.deltoids = {x:13 + f + e, y:100 - d};
 
 			ex.elbow.out = {x:10 + a + b, y:144 - (d * 3),
 				cp1:{x:4 + f + d + d + d, y:127 - b - d},
 				cp2:{x:14 + a + e, y:130}};
-			ctx.bezierCurveTo(ex.elbow.out.cp1.x, ex.elbow.out.cp1.y, 
-				ex.elbow.out.cp2.x, ex.elbow.out.cp2.y, 
-				ex.elbow.out.x, ex.elbow.out.y);
 
 			ex.wrist.out = {x:9 + d + d - g, y:211 - (a + d + b),
 				cp1:{x:0 + a + b + d - (g / 2), y:160 - b}};
-			ctx.quadraticCurveTo(ex.wrist.out.cp1.x, ex.wrist.out.cp1.y, ex.wrist.out.x, ex.wrist.out.y);
 
 			/*Hands*/
 			ex.hand.knuckle = {x:20 - ((d*4) + g), y:226 - (b + (d * 4)),
 				cp1:{x:13-g, y:223 - (b + b + c)}};
-			ctx.quadraticCurveTo(ex.hand.knuckle.cp1.x, ex.hand.knuckle.cp1.y, ex.hand.knuckle.x, ex.hand.knuckle.y);
 
 			ex.hand.tip = {x:26-g, y:222 - (b + c),
 				cp1:{x:23 - (d + g), y:223 - (b + d)}};
-			ctx.quadraticCurveTo(ex.hand.tip.cp1.x, ex.hand.tip.cp1.y, ex.hand.tip.x, ex.hand.tip.y);
 			// up to second joint of fingers
 
 			ex.hand.palm = {x:19 + e-g, y:213 - (b + e),
 				cp1:{x:22 + c - g, y:212 + (d - b)}};
-			ctx.quadraticCurveTo(ex.hand.palm.cp1.x, ex.hand.palm.cp1.y, ex.hand.palm.x, ex.hand.palm.y);
 
 			// no inner and outer thumb, end point is the thumb tip
 			ex.thumb.tip = {x:26 - g, y:222 - (b + c)};
-			ctx.lineTo(ex.thumb.tip.x, ex.thumb.tip.y);
 
 			ex.wrist.in = {x:19 + d - g, y:202 - (b + c),
 				cp1:{x:32 - g, y:222 - (b + d)}};
-			ctx.quadraticCurveTo(ex.wrist.in.cp1.x, ex.wrist.in.cp1.y, ex.wrist.in.x, ex.wrist.in.y);
 
 			/*Inner Arm*/
 			ex.ulna = {x:19 + d - g, y:186 + b,
 				cp1:{x:17 + d - g, y:195 + b}};
-			ctx.quadraticCurveTo(ex.ulna.cp1.x, ex.ulna.cp1.y, ex.ulna.x, ex.ulna.y);
 
 			ex.elbow.in = {x:27 + a, y:150 - (a + d + b),
 				cp1:{x:28 + b + d - (g / 2), y:167 - (b + (c * 3))}};
-			ctx.quadraticCurveTo(ex.elbow.in.cp1.x, ex.elbow.in.cp1.y, ex.elbow.in.x, ex.elbow.in.y);
 
 			ex.armpit = {x:44 + b + e, y:115 - (a + a),
 				cp1:{x:40, y:140 - a}};
-			ctx.quadraticCurveTo(ex.armpit.cp1.x, ex.armpit.cp1.y, ex.armpit.x, ex.armpit.y);
 
 			ex.trapezius.bot = {x:39 + (b + c), y:132 - (f + b + d)};
-			ctx.lineTo(ex.trapezius.bot.x, ex.trapezius.bot.y);
 			var h = 0;
 			if (waist < 0) h = waist * -0.5;
 
 			ex.waist = {x:47 + (c * 3) - (h / 4), y:149 - (h + a),
 				cp1:{x:43 + (c * 3), y:145 - (h + a + b)}};
-			ctx.quadraticCurveTo(ex.waist.cp1.x, ex.waist.cp1.y, ex.waist.x, ex.waist.y);
 			
+			drawPoints(ctx, null, ex.shoulder, ex.deltoids, ex.elbow.out, 
+				ex.wrist.out, ex.hand.knuckle, ex.hand.tip, ex.hand.palm, ex.thumb.tip, ex.wrist.in,
+				ex.ulna, ex.elbow.in, ex.armpit, ex.trapezius.bot, ex.waist);
+
 		} else {
 			a = shoulders - 11;
 			if (shoulders > 20) a = 9;
@@ -1296,80 +1298,70 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			y = x / 2;
 			var m = 0;
 			if (shoulders > 10) m = (shoulders - 10) / 20;
-			ctx.moveTo(79, 48);
 
 			ex.neck.top = {x:69, y:48};
-			ctx.lineTo(ex.neck.top.x, ex.neck.top.y);
 
 			ex.neck.cusp = {x:69, y:63, cp1:{x:69,y:53}};
-			ctx.quadraticCurveTo(ex.neck.cusp.cp1.x, ex.neck.cusp.cp1.y, ex.neck.cusp.x, ex.neck.cusp.y);
 
 			ex.collarbone = {x:46 + a, y:70 + b, cp1:{x:55+c, y:69+c}};
-			ctx.quadraticCurveTo(ex.collarbone.cp1.x, ex.collarbone.cp1.y, ex.collarbone.x, ex.collarbone.y);
 			// up to middle of shoulder, about collar bone distance
 
 			/*Outer Arm*/
 			ex.shoulder = {x:34 + d + m + m + m, y:97,
 				cp1:{x:36 + m, y:74 + a + e},
 				cp2:{x:40 + m, y:77 + a}};
-			ctx.bezierCurveTo(ex.shoulder.cp1.x, ex.shoulder.cp1.y, 
-				ex.shoulder.cp2.x, ex.shoulder.cp2.y,
-				ex.shoulder.x, ex.shoulder.y);
+	
 			// shoulder up to outside of upper arm
 			ex.elbow.out = {x:24 + b + m + m + b, y:138,
 				cp1:{x:28 + m + m + m + d + b, y:115}};
-			ctx.quadraticCurveTo(ex.elbow.out.cp1.x, ex.elbow.out.cp1.y, ex.elbow.out.x, ex.elbow.out.y);
 			// down to outside of elbow
 
 			ex.wrist.out = {x:14 + x + m + m + c + b-g, y:193 - z,
 				cp1:{x:17 + a + c + m + m + m + b - (g / 2), y:155 - z}};
-			ctx.quadraticCurveTo(ex.wrist.out.cp1.x, ex.wrist.out.cp1.y, ex.wrist.out.x, ex.wrist.out.y);
 			// down to outside of wrist
 
 			/*Hands*/
 			ex.hand.knuckle = {x:15 + x + y + (y/3) - (g + z), y:213 - (b + z),
 				cp1:{x:16 + x + y + (y/4) - (g + z), y:209 - (b + z)}};
-			ctx.quadraticCurveTo(ex.hand.knuckle.cp1.x, ex.hand.knuckle.cp1.y, ex.hand.knuckle.x, ex.hand.knuckle.y);
 			// down to middle of the back of the hand
 
 			ex.hand.tip = {x:29 + x + y + (y/1.2) - (a + b + g + z + (z / 3)), y:214 + a - z,
 				cp1:{x:21 + x + y + (y/1.2) - (a + b + g + z + (z / 10)), y:216 + b - (z/10)}};
-			ctx.quadraticCurveTo(ex.hand.tip.cp1.x, ex.hand.tip.cp1.y, ex.hand.tip.x, ex.hand.tip.y);
 			// down to tip of hand
 
 			ex.hand.palm = {x:23 + x + (y * 1.5) - (b + g + z), y:207 - (e + z),
 				cp1:{x:28 + x + y - (g + z), y:209 - z}};
-			ctx.quadraticCurveTo(ex.hand.palm.cp1.x, ex.hand.palm.cp1.y, ex.hand.palm.x, ex.hand.palm.y);
 
 			ex.thumb.in = {x:29 + x + (y*1.5) - (a + g + z), y:214 - (b + c + z)};
-			ctx.lineTo(ex.thumb.in.x, ex.thumb.in.y);
 			ex.thumb.out = {x:23 + x + y + c - (g + (z/2)), y:194 + a + d - z,
 				cp1:{x:35 + x + y - (a + e + g + z), y:215 + e - z}};
-			ex.wrist.out = ex.thumb.out;	// actually the same place from this perspective
-			ctx.quadraticCurveTo(ex.thumb.out.cp1.x, ex.thumb.out.cp1.y, ex.thumb.out.x, ex.thumb.out.y);
+			ex.wrist.in = ex.thumb.out;	// actually the same place from this perspective
 			// past the thumb
 
 			/*Inner Arm*/
 			ex.ulna = {x:22 + (x / 2) + b + b + a - (g / 2), y:191 - (f + z),
 				cp1:{x:22 + x + a - (d + g), y:200 - z}};
-			ctx.quadraticCurveTo(ex.ulna.cp1.x, ex.ulna.cp1.y, ex.ulna.x, ex.ulna.y);
 			// halfway up forearm
 
 			ex.elbow.in = {x:38 + b + d + b + d, y:132,
 				cp1:{x:35 + c + b + b + c - ((x / 4)), y:153 - b}};
-			ctx.quadraticCurveTo(ex.elbow.in.cp1.x, ex.elbow.in.cp1.y, ex.elbow.in.x, ex.elbow.in.y);
+
 			// slightly past elbow on its way up
-			ctx.lineTo(50 + d - e, 95 + (c * 3));
+			ex.humorous = {x:50 + d - e, y:95 + (c * 3)};
 			ex.armpit = {x:46 + d + d + e, y:108 + b};
-			ctx.lineTo(ex.armpit.x, ex.armpit.y);
 			var h = 0;
 			if (waist < 0) h = waist * -0.5;
 
 			ex.waist = {x:56 - (d + (h / 4)) +legl*0.1 +waist*0.1, 
 				y:138 - (b + h) - legl*0.5,
 				cp1:{x:52 + d +legl*0.05 +waist*0.1, y:129 -h -legl}};
-			ctx.quadraticCurveTo(ex.waist.cp1.x, ex.waist.cp1.y, ex.waist.x, ex.waist.y);
 			// down to narrowest part of waist
+
+
+			drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
+				ex.collarbone, ex.shoulder, ex.elbow.out, ex.wrist.out,
+				ex.hand.knuckle, ex.hand.tip, ex.hand.palm, ex.thumb.in, ex.thumb.out,
+				ex.ulna, ex.elbow.in, ex.humorous, ex.armpit, ex.waist);
 		}		
 	}
 	function drawMidBody(ctx) {
@@ -1431,8 +1423,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		}	
 
 		// actual drawing after defining draw points
-		ctx.quadraticCurveTo(ex.kneepit.cp1.x, ex.kneepit.cp1.y, ex.kneepit.x, ex.kneepit.y);
-		ctx.quadraticCurveTo(ex.calf.out.cp1.x, ex.calf.out.cp1.y, ex.calf.out.x, ex.calf.out.y);
+		drawPoints(ctx, null, ex.kneepit, ex.calf.out);
 	}
 
 	function drawLegs(ctx)
@@ -1453,6 +1444,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			/*Foot*/
 			ex.toe.out = {x:29 +legs/10, y:388 -legs*0.4,
 				cp1:{x:34 +legs/5, y:386 - legs*1.33}};
+
+			ex.toe.pinkie = {x:29 + legs*0.4, y:390 - legs/3,
+				cp1:{x:29 + legs/3, y:389 - legs/3}};
 
 			ex.toe.in = {x:59 -legs*0.7, y:389 -legs/3,
 				cp1:{x:43 -legs/3, y:394 -legs/3}};
@@ -1477,34 +1471,18 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.groin = {x:78 -legs/5, y:205 -legs/5 -legl*1.1,
 				cp1:{x:78 -legs*0.7, y:230 +legs/3}};
 
-			ctx.quadraticCurveTo(ex.ankle.outtop.cp1.x, ex.ankle.outtop.cp1.y, ex.ankle.outtop.x, ex.ankle.outtop.y);
-
-			ctx.quadraticCurveTo(ex.ankle.out.cp1.x, ex.ankle.out.cp1.y, ex.ankle.out.x, ex.ankle.out.y);
-
-			ctx.quadraticCurveTo(ex.ankle.outbot.cp1.x, ex.ankle.outbot.cp1.y, ex.ankle.outbot.x, ex.ankle.outbot.y);
 
 
-			ctx.quadraticCurveTo(ex.toe.out.cp1.x, ex.toe.out.cp1.y, ex.toe.out.x, ex.toe.out.y);
+			ex.kneecap.top = {x:70 - legs*0.7, y:250 + legs,
+				cp1:{x:65 - legs/5, y:260 + legs/5}};
 
-			ctx.quadraticCurveTo(29 + legs/3, 389 - legs/3, 29 + legs*0.4, 390 - legs/3);
+			ex.groin.in = {x:79, y:205 - legs/5 -legl*1.1,
+				cp1:{x:79, y:208 - legs/5}};
 
+			drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
+				ex.toe.out, ex.toe.pinkie, ex.toe.in, ex.ankle.in, ex.ankle.intop,
+				ex.calf.in, ex.kneecap, ex.groin, ex.groin.in);
 
-			ctx.quadraticCurveTo(ex.toe.in.cp1.x, ex.toe.in.cp1.y, ex.toe.in.x, ex.toe.in.y);
- 
-			ctx.quadraticCurveTo(ex.ankle.in.cp1.x, ex.ankle.in.cp1.y, ex.ankle.in.x, ex.ankle.in.y);
-			/*Inner-Leg*/
-
-			ctx.quadraticCurveTo(ex.ankle.intop.cp1.x, ex.ankle.intop.cp1.y, ex.ankle.intop.x, ex.ankle.intop.y);
-
-			ctx.lineTo(ex.calf.in.x, ex.calf.in.y);
-
-			ctx.bezierCurveTo(ex.kneecap.cp1.x, ex.kneecap.cp1.y, ex.kneecap.cp2.x, ex.kneecap.cp2.y, ex.kneecap.x, ex.kneecap.y);
-
-			ctx.quadraticCurveTo(65 - legs/5, 260 + legs/5, 70 - legs*0.7, 250 + legs);
-
-			ctx.quadraticCurveTo(ex.groin.cp1.x, ex.groin.cp1.y, ex.groin.x, ex.groin.y);
-
-			ctx.quadraticCurveTo(79, 208 - legs/5, 79, 205 - legs/5 -legl*1.1);
 		} else {
 			var a = 9;
 			if (legs <= 20) a = legs - 11;
@@ -1520,20 +1498,21 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				z = legs - 20;
 				z /= 2;
 			}
-
 			ex.ankle.outtop = {x:38 + e + (a + b + b + d + b), y:351 -legl*0.1,
 				cp1:{x:37 + e + (a + b + b + d + b), y:338}};
-			ctx.quadraticCurveTo(ex.ankle.outtop.cp1.x, ex.ankle.outtop.cp1.y, ex.ankle.outtop.x, ex.ankle.outtop.y);
 
 			ex.ankle.out = {x:39 + (a + b + b + d + b), y:364, 
 				cp1:{x:38 + (a + b + b + d + b), y:357}};
-			ctx.quadraticCurveTo(ex.ankle.out.cp1.x, ex.ankle.out.cp1.y, ex.ankle.out.x, ex.ankle.out.y);
+
+			drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out);
 
 			/*Foot*/
 			if (shoeheight < 3) {	// not wearing heels
 				ctx.quadraticCurveTo(38 + (a + b + b + d + b), 365, 39 + (a + b + b + d + b), 367);
-				ex.toe.out = {x:30 + (a + a + b + d + b), y:384};
-				ctx.quadraticCurveTo(36 + (a + a + b + d + b), 372, ex.toe.out.x, ex.toe.out.y);
+				ex.toe.out = {x:30 + (a + a + b + d + b), y:384,
+					cp1:{x:36 + (a + a + b + d + b), y:372}};
+
+				ctx.quadraticCurveTo(ex.toe.out.cp1.x, ex.toe.out.cp1.y, ex.toe.out.x, ex.toe.out.y);
 				// down to outer toes
 				ctx.quadraticCurveTo(32 + (a + a + b + d + b), 386, 33 + (a + a + b + d + b), 387);
 				ex.toe.in = {x:52 + (a + a + b + d + b), y:386};
@@ -1547,12 +1526,13 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				ex.ankle.intop = {x:50 + (a + a + b + b + c), y:361};
 				ctx.quadraticCurveTo(50 + (a + a + b + b + c), 364, ex.ankle.intop.x, ex.ankle.intop.y);
 				ctx.lineTo(50 + b + (a + b + c + b), 353 - a);
+
 			}
 			else {
 				// bottom ankle bone
 				ex.ankle.outbot = {x:ex.ankle.out.x, y:ex.ankle.out.y+5};
-				ctx.quadraticCurveTo(ex.ankle.outbot.x-1, ex.ankle.outbot.y-1.5,
-					ex.ankle.outbot.x, ex.ankle.outbot.y);
+				ex.ankle.outbot.cp1 = {x:ex.ankle.outbot.x-1, y:ex.ankle.outbot.y-1.5};
+
 
 				var legaddition = legs;
 				if (legaddition > 30) legaddition = 30;
@@ -1560,19 +1540,14 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				// higher heels will cause foot to appear narrower
 				ex.toe.out = {x:ex.ankle.out.x-2+shoeheight*0.2+legaddition*0.1, y:ex.ankle.out.y+12+shoeheight*2};
 				ex.toe.in = {x:ex.toe.out.x+14-shoeheight*0.2, y:ex.toe.out.y};
+				ex.toe.in.cp1 = {x:ex.toe.out.x+3, y:ex.toe.out.y+15};
+				ex.toe.in.cp2 = {x:ex.toe.in.x-3, y:ex.toe.in.y+1};
 				ex.ankle.in = {x:49 + (a + a + b + d + b)*0.95, y:368};
+
 				ex.ankle.intop = {x:ex.ankle.in.x-1,y:ex.ankle.in.y-5};
-				
-				ctx.lineTo(ex.toe.out.x, ex.toe.out.y);
+				ex.ankle.intop.cp1 = {x:ex.ankle.in.x+2, y:ex.ankle.in.y-2};
 
-				ctx.bezierCurveTo(ex.toe.out.x+3, ex.toe.out.y+15,
-					ex.toe.in.x-3, ex.toe.in.y+15,
-					ex.toe.in.x, ex.toe.in.y);
-
-				ctx.lineTo(ex.ankle.in.x, ex.ankle.in.y);
-
-				ctx.quadraticCurveTo(ex.ankle.in.x+2, ex.ankle.in.y-2,
-					ex.ankle.intop.x, ex.ankle.intop.y);
+				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop);
 			}
 
 			/*Inner-Leg*/
@@ -1580,16 +1555,18 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.kneecap = {x:63 + a + b + e + b, y:265 -legl*0.6,
 				cp1:{x:64 +a*2.6, y:297 -a},
 				cp2:{x:56 +a*2.1, y:296}};
-			ctx.bezierCurveTo(ex.kneecap.cp1.x, ex.kneecap.cp1.y, ex.kneecap.cp2.x, ex.kneecap.cp2.y, ex.kneecap.x, ex.kneecap.y);
 
-			ex.topkneecap = {x:ex.kneecap.x, y:ex.kneecap.y-4};
-			ctx.quadraticCurveTo(63 + a + b + e + b, 262, ex.topkneecap.x, ex.topkneecap.y);
+			ex.kneecap.top = {x:ex.kneecap.x, y:ex.kneecap.y-4,
+				cp1:{x:63 + a + b + e + b, y:262}};
 
 			// up to corner of inner thigh
 			ex.groin = {x:75 + d, y:203 -legl*1.1,
 				cp1:{x:71 + a + b + (z / 3), y:233 + (z / 3) - b}};
-			ctx.quadraticCurveTo(ex.groin.cp1.x, ex.groin.cp1.y, ex.groin.x, ex.groin.y);
-			ctx.quadraticCurveTo(79, 204-legl*1.1, 79, ex.groin.y);
+
+			ex.groin.in = {x:79, y:ex.groin.y,
+				cp1:{x:79, y:204-legl*1.1}};
+
+			drawPoints(ctx, null, ex.kneecap, ex.kneecap.top, ex.groin, ex.groin.in);
 		}
 	}
 	
@@ -1947,9 +1924,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	ctx.fill();
 	ctx.stroke();
 	
+	reflectHorizontal(ctx);
 	avatar.drawAdditional(ctx, ex, "undergenitals");
 
-	reflectHorizontal(ctx);
 	drawBellyButton(ctx);
 	drawGenitals(ctx);
 

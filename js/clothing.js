@@ -359,12 +359,12 @@ var drawTightPants = da.drawTightPants = function(stroke, fill) {
 var drawPencilSkirt = da.drawPencilSkirt = function(stroke, fill) {
 	function drawHalf(ctx, ex, mods) {
 		// these skirts are relatively high waisted
-		ctx.moveTo(ex.botbellybutton.x, ex.botbellybutton.y-2);
+		ctx.moveTo(ex.bellybutton.bot.x, ex.bellybutton.bot.y-2);
 		var sp = da.splitBezier({p1:ex.waist, p2:ex.hipbone,
 			cp1:ex.hipbone.cp1, cp2:ex.hipbone.cp2},0.5);
 
-		ctx.bezierCurveTo(79-4,ex.botbellybutton.y-2,
-			sp.right.p1.x+3, (sp.right.p1.y+ex.botbellybutton.y)/2,
+		ctx.bezierCurveTo(79-4,ex.bellybutton.bot.y-2,
+			sp.right.p1.x+3, (sp.right.p1.y+ex.bellybutton.bot.y)/2,
 			sp.right.p1.x, sp.right.p1.y);
 
 		ctx.bezierCurveTo(sp.right.cp1.x, sp.right.cp1.y,
@@ -890,9 +890,9 @@ var drawThighSocks = da.drawThighSocks = function(stroke, pattern) {
 			/*Inner-Leg*/
 			// inner shin to knee cap
 			ctx.bezierCurveTo(64 + a + b + e + b + b, 297 - a, 56 + a + b + e + b, 286, ex.kneecap.x, ex.kneecap.y);
-			ctx.quadraticCurveTo(63 + a + b + e + b, 262, ex.topkneecap.x, ex.topkneecap.y);
+			ctx.quadraticCurveTo(63 + a + b + e + b, 262, ex.kneecap.top.x, ex.kneecap.top.y);
 			// up to corner of inner thigh
-			sp = da.splitQuadratic({p1:ex.topkneecap,
+			sp = da.splitQuadratic({p1:ex.kneecap.top,
 								cp1:{x:71 + a + b + (z / 3), y:233 + (z / 3) - b},
 								p2:ex.groin}, 0.7);
 
