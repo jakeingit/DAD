@@ -15,6 +15,16 @@ if (typeof State !== 'undefined') {
 String.prototype.capitalizeFirstLetter = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
+if (!Array.prototype.last) {
+  Array.prototype.last = function() {
+    return (this.length)? this[this.length-1] : null;
+  }
+}
+if (!Array.prototype.extend) {
+  Array.prototype.extend = function(b) {
+    this.push.apply(this, b);
+  }
+}
 if (!String.prototype.startsWith) {
     String.prototype.startsWith = function(searchString, position){
       position = position || 0;
@@ -169,6 +179,92 @@ da.splitQuadratic = function(points, t) {
 	return {left:{p1:A, cp1:D, p2:F},
 			right:{p1:F, cp1:E, p2:C}};
 };
+da.splitLinear = function(points, t) {
+  // split a linear line
+  var A = points.p1, B = points.p2;
+  var C = {x:A.x*t + B.x*(1-t), y:A.y*t + B.y*(1-t)};
+  return {left:{p1:A, p2:C},
+      right:{p1:C, p2:B}};
+}
+da.splitCurve = function(startp, endp, t) {
+  // split either a quadratic or bezier curve depending on number of control points on endp
+  if (endp.hasOwnProperty("cp2")) {
+    return da.splitBezier({p1:startp, p2:endp, cp1:endp.cp1, cp2:endp.cp2}, t);
+  }
+  else if (endp.hasOwnProperty("cp1")) {
+    return da.splitQuadratic({p1:startp, p2:endp, cp1:endp.cp1}, t);
+  }
+  else {
+    return da.splitLinear({p1:startp, p2:endp}, t);
+  }
+}
+da.adjustPoint = function(point, dx, dy) {
+  // return a point with x and y adjusted by dx and dy respectively
+  var movedPoint = Object.assign({},point);
+  movedPoint.x += dx;
+  movedPoint.y += dy;
+  if (movedPoint.cp1) {
+    movedPoint.cp1.x += dx;
+    movedPoint.cp1.y += dy;    
+  }
+  if (movedPoint.cp2) {
+    movedPoint.cp2.x += dx;
+    movedPoint.cp2.y += dy;    
+  }
+  return movedPoint;
+}
+
+
+// utility and higher level functions for drawing clothes
+function drawFull(ctx, ex, mods, drawHalf) {
+  // left half
+  ctx.beginPath();
+  drawHalf.call(this,ctx,ex,mods);
+  ctx.fill();
+  ctx.stroke();
+
+  da.reflectHorizontal(ctx);
+
+  ctx.beginPath();
+  drawHalf.call(this,ctx,ex,mods);
+  ctx.fill();
+  ctx.stroke();
+}
+var getFullDrawer = da.getFullDrawer = function(stroke, fill, lineWidth, drawHalf) {
+  // everything needs a stroke, fill, and lineWidth, as well the half drawing method
+  // returns a full draw method (draws both left and right)
+  function draw(ctx, ex, mods) {
+    ctx.save();
+
+    ctx.lineWidth = lineWidth;
+    if (typeof stroke === "function")
+      ctx.strokeStyle = stroke(ctx);
+    else
+      ctx.strokeStyle = stroke;
+    if (typeof fill === "function")
+      ctx.fillStyle = fill(ctx);
+    else 
+      ctx.fillStyle = fill;
+
+    ctx.save(); // drawHalf might change style in itself
+    ctx.beginPath();
+    drawHalf.call(this,ctx,ex,mods);
+    ctx.fill("nonzero");
+    ctx.stroke();
+
+
+    ctx.restore();
+    ctx.beginPath();
+    da.reflectHorizontal(ctx);
+    drawHalf.call(this,ctx,ex,mods);
+    ctx.fill("nonzero");
+    ctx.stroke();
+
+    // reset to original scale
+    ctx.restore();
+  }
+  return draw;
+}
 
 
 return da;

@@ -24,6 +24,10 @@ var drawPoints = da.drawPoints = function(ctx) {
 	// for every point after
 	for (var i = 2, len = arguments.length; i < len; ++i) {
 		var p = arguments[i];
+		if (!p) {
+			console.log("don't have point #", i);
+			continue;
+		}
 		if (p.hasOwnProperty("cp2")) {
 			ctx.bezierCurveTo(p.cp1.x, p.cp1.y, p.cp2.x, p.cp2.y, p.x, p.y, p.trace, p.traceSize);
 		}
@@ -40,6 +44,17 @@ var tracePoint = da.tracePoint = function(point, radius) {
 	// add a trace to a drawpoint when giving to drawPoints function
 	return Object.assign({trace:true,traceSize:radius},point);
 }
+
+da.averageQuadratic = function(ctx, p1, p2, t, dx, dy) {
+	// draw a smooth quadratic curve with the control point t along the straight line from p1 to p2
+	// disturbed with dx and dy if applicable
+	if (!t) t = 0.5;
+	if (!dx) dx = 0;
+	if (!dy) dy = 0;
+	ctx.quadraticCurveTo(p1.x*t+p2.x*(1-t)+dx,
+		p1.y*t+p2.y*(1-t)+dy, p2.x, p2.y);
+}
+
 
 da.getCanvas = function(canvasName, styleOverride) {
 	/* 	get a canvas DOM element with id=canvasName, generating it if necessary
@@ -819,7 +834,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.arc(ex.nipples.x, ex.nipples.y, ex.nipples.r, ex.nipples.startAngle, ex.nipples.endAngle, false);
 	}
 	
-	function drawHead(ctx)
+	function drawHeadBase(ctx)
 	{
 		ctx.beginPath();
 		
@@ -952,6 +967,14 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		if (typeof IRISCOLOR === "function") ctx.fillStyle = IRISCOLOR(ctx, ex);
 		else ctx.fillStyle = IRISCOLOR;
+	}
+	function drawPupil(ctx) {
+		ctx.beginPath();
+		ctx.arc(ex.iris.x, ex.iris.y, ex.iris.r*0.7, 0, Math.PI*2, true);
+		var grd = ctx.createRadialGradient(ex.iris.x, ex.iris.y, ex.iris.r*0.5, ex.iris.x, ex.iris.y, ex.iris.r*0);
+		grd.addColorStop(0, "rgba(0,0,0,0)");
+		grd.addColorStop(1, "black");
+		ctx.fillStyle = grd;
 	}
 	function drawEyebrows(ctx) {
 		ctx.beginPath();
@@ -1182,6 +1205,39 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	}
 	
 	// main drawing functions from top to down
+	function drawHead(ctx) {
+		drawHeadBase(ctx);
+		ctx.fillStyle = SKINC;
+		ctx.strokeStyle = SKINCB;
+		ctx.fill();
+		ctx.stroke();
+
+		calcIris();
+		ctx.save();
+		drawEyes(ctx);
+		if (typeof EYECOLOR === "function") ctx.fillStyle = EYECOLOR(ctx, ex);
+		else ctx.fillStyle = EYECOLOR;
+		ctx.fill();
+		ctx.clip();
+		drawIris(ctx);
+		ctx.fill();
+		drawPupil(ctx);
+		ctx.fill();
+		ctx.restore();
+
+		// strokes for eyes
+		ctx.strokeStyle = EYELINER;
+		drawEyes(ctx);
+		ctx.stroke();
+		ctx.fillStyle = EYELINER;
+		drawEyelids(ctx);
+		ctx.fill();
+
+		drawEyebrows(ctx);
+		ctx.stroke();
+		ctx.fill();	
+	}
+
 	function drawUpperBody(ctx) {
 		// from neck to waist
 
@@ -1224,14 +1280,19 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
 				ex.trapezius.top, ex.collarbone);
 
-			if (a < 6) ctx.quadraticCurveTo(39 + b, 70 + d + d, 37 + b, 72 + d);
+			if (a < 6) {
+				ex.collarbone.top = {x:37 + b, y:72 + d,
+					cp1:{x:39 + b, y:70 + d + d}};
+				ctx.quadraticCurveTo(ex.collarbone.top.cp1.x, ex.collarbone.top.cp1.y,
+					ex.collarbone.top.x, ex.collarbone.top.y);
+			}
 
 			/*Outer Arm*/
-			ex.shoulder = {x:14 + f, y:110 - (a + d),
+			ex.deltoids = {x:14 + f, y:110 - (a + d),
 				cp1:{x:16 + f, y:74},
 				cp2:{x:9 + f + a, y:88 - a}};
 
-			ex.deltoids = {x:13 + f + e, y:100 - d};
+			ex.shoulder = {x:13 + f + e, y:100 - d};
 
 			ex.elbow.out = {x:10 + a + b, y:144 - (d * 3),
 				cp1:{x:4 + f + d + d + d, y:127 - b - d},
@@ -1274,7 +1335,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.waist = {x:47 + (c * 3) - (h / 4), y:149 - (h + a),
 				cp1:{x:43 + (c * 3), y:145 - (h + a + b)}};
 			
-			drawPoints(ctx, null, ex.shoulder, ex.deltoids, ex.elbow.out, 
+			drawPoints(ctx, null, ex.deltoids, ex.shoulder, ex.elbow.out, 
 				ex.wrist.out, ex.hand.knuckle, ex.hand.tip, ex.hand.palm, ex.thumb.tip, ex.wrist.in,
 				ex.ulna, ex.elbow.in, ex.armpit, ex.trapezius.bot, ex.waist);
 
@@ -1335,13 +1396,14 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.thumb.in = {x:29 + x + (y*1.5) - (a + g + z), y:214 - (b + c + z)};
 			ex.thumb.out = {x:23 + x + y + c - (g + (z/2)), y:194 + a + d - z,
 				cp1:{x:35 + x + y - (a + e + g + z), y:215 + e - z}};
-			ex.wrist.in = ex.thumb.out;	// actually the same place from this perspective
 			// past the thumb
 
 			/*Inner Arm*/
 			ex.ulna = {x:22 + (x / 2) + b + b + a - (g / 2), y:191 - (f + z),
 				cp1:{x:22 + x + a - (d + g), y:200 - z}};
 			// halfway up forearm
+
+			ex.wrist.in = da.splitCurve(ex.thumb.out, ex.ulna, 0.4).right.p1;
 
 			ex.elbow.in = {x:38 + b + d + b + d, y:132,
 				cp1:{x:35 + c + b + b + c - ((x / 4)), y:153 - b}};
@@ -1365,7 +1427,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		}		
 	}
 	function drawMidBody(ctx) {
-		// from waist to hipbones
+		// from waist to hips
 		/*Waist*/
 		var a = 0;
 		if (shoulders < 11) {
@@ -1386,18 +1448,18 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var y = b;
 		if (y > 100) y = 100;
 
-		ex.hipbone = {x:50.3 + (c / 2) - ((a / 2) + (b/20) + (f / 2)),
+		ex.hip = {x:50.3 + (c / 2) - ((a / 2) + (b/20) + (f / 2)),
 			y:175 - ((y / 22) + d) - legl,
 			cp1:{x:53 + c - ((a / 1.2) + (y / 40.7) + (b / 60)), y:145 + (c / 5) + (y / 27.5) + legl*0.2},
 			cp2:{x:52 + c - ((a / 1.6) + (f / 2) + (b / 40)), y:161 - ((y / 6.875)) -legl}};
-		ctx.bezierCurveTo(ex.hipbone.cp1.x, ex.hipbone.cp1.y,
-			ex.hipbone.cp2.x, ex.hipbone.cp2.y,
-		 	ex.hipbone.x, ex.hipbone.y);
+		ctx.bezierCurveTo(ex.hip.cp1.x, ex.hip.cp1.y,
+			ex.hip.cp2.x, ex.hip.cp2.y,
+		 	ex.hip.x, ex.hip.y);
 		// down to hips at belly button level		
 	}
 
 	function drawOuterThigh(ctx) {
-		// starting from hipbone all the way to top outer ankle
+		// starting from hip all the way to top outer ankle
 		ex.calf = {};
 		if (legs < 11) {
 			ex.kneepit = {x:36 + legs*0.833, y:269 + legs*0.6 -legl*0.6,
@@ -1508,25 +1570,36 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 			/*Foot*/
 			if (shoeheight < 3) {	// not wearing heels
-				ctx.quadraticCurveTo(38 + (a + b + b + d + b), 365, 39 + (a + b + b + d + b), 367);
+				ex.ankle.outbot = {x:39 + (a + b + b + d + b), y:367,
+					cp1:{x:38 + (a + b + b + d + b), y:365}};
+
 				ex.toe.out = {x:30 + (a + a + b + d + b), y:384,
 					cp1:{x:36 + (a + a + b + d + b), y:372}};
 
-				ctx.quadraticCurveTo(ex.toe.out.cp1.x, ex.toe.out.cp1.y, ex.toe.out.x, ex.toe.out.y);
+
 				// down to outer toes
-				ctx.quadraticCurveTo(32 + (a + a + b + d + b), 386, 33 + (a + a + b + d + b), 387);
-				ex.toe.in = {x:52 + (a + a + b + d + b), y:386};
-				ctx.quadraticCurveTo(40 + (a + a + b + d + b), 391, ex.toe.in.x, ex.toe.in.y);
+				ex.toe.mid = {x:33 + (a + a + b + d + b), y:387,
+					cp1:{x:32 + (a + a + b + d + b), y:386}};
+
+				ex.toe.in = {x:52 + (a + a + b + d + b), y:386,
+					cp1:{x:40 + (a + a + b + d + b), y:391}};
+
 				// to inner toes
-				ctx.quadraticCurveTo(54 + (a + a + b + d + b), 384, 52 + (a + a + b + d + b), 381);
+				ex.toe.intop = {x:52 + (a + a + b + d + b), y:381,
+					cp1:{x:54 + (a + a + b + d + b), y:384}};
 
-				ex.ankle.in = {x:49 + (a + a + b + d + b),y:368};
-				ctx.quadraticCurveTo(49 + (a + a + b + d + b), 377, ex.ankle.in.x, ex.ankle.in.y);
+
+				ex.ankle.in = {x:49 + (a + a + b + d + b),y:368,
+					cp1:{x:49 + (a + a + b + d + b), y:377}};
+
 				// inner ankle
-				ex.ankle.intop = {x:50 + (a + a + b + b + c), y:361};
-				ctx.quadraticCurveTo(50 + (a + a + b + b + c), 364, ex.ankle.intop.x, ex.ankle.intop.y);
-				ctx.lineTo(50 + b + (a + b + c + b), 353 - a);
+				ex.ankle.intop = {x:50 + (a + a + b + b + c), y:361,
+					cp1:{x:50 + (a + a + b + b + c), y:364}};
 
+				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
+
+				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop,
+					ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 			else {
 				// bottom ankle bone
@@ -1546,8 +1619,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 				ex.ankle.intop = {x:ex.ankle.in.x-1,y:ex.ankle.in.y-5};
 				ex.ankle.intop.cp1 = {x:ex.ankle.in.x+2, y:ex.ankle.in.y-2};
+				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
 
-				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop);
+				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 
 			/*Inner-Leg*/
@@ -1585,9 +1659,6 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.stroke();
 
 
-		drawHead(ctx);
-		ctx.fill();
-		ctx.stroke();
 		drawAbs(ctx);
 		ctx.stroke();
 		drawPecs(ctx);
@@ -1621,36 +1692,11 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		if (hipthick > 14) {
 			ctx.lineWidth = hipthick / 14;
 			ctx.beginPath();
-			ctx.moveTo(ex.hipbone.x, ex.hipbone.y);
+			ctx.moveTo(ex.hip.x, ex.hip.y);
 			drawOuterThigh(ctx);
 			ctx.stroke();
 		}
 		ctx.restore();
-
-
-
-		calcIris();
-		ctx.save();
-		drawEyes(ctx);
-		if (typeof EYECOLOR === "function") ctx.fillStyle = EYECOLOR(ctx, ex);
-		else ctx.fillStyle = EYECOLOR;
-		ctx.fill();
-		ctx.clip();
-		drawIris(ctx);
-		ctx.fill();
-		ctx.restore();
-
-		// strokes for eyes
-		ctx.strokeStyle = EYELINER;
-		drawEyes(ctx);
-		ctx.stroke();
-		ctx.fillStyle = EYELINER;
-		drawEyelids(ctx);
-		ctx.fill();
-
-		drawEyebrows(ctx);
-		ctx.stroke();
-		ctx.fill();
 	}
 	
 	function drawHalfFigure2(ctx)
@@ -1726,11 +1772,15 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	var browb = typeof id["browb"] !== 'undefined' ? id["browb"] : missingData = true;
 	var browv = typeof id["browv"] !== 'undefined' ? id["browv"] : missingData = true;
 	var browr = typeof id["browr"] !== 'undefined' ? id["browr"] : missingData = true;
+	var eyelinerc = typeof id["eyelinerc"] !== 'undefined' ? id["eyelinerc"] : missingData = true;
 
 	// DRAW POINTS defined (x,y) for specific body points so we have unified calculations
 	// these are calculated once in a core function and then referenced in other functions
 	// they are the exported physical parameters and are defined in their respective draw functions
 	var ex = {};
+	ex.pelvis = {x:79,y:180-legl, // special case for pelvis where cp3 is to the hip
+		cp1:{x:60,y:180-legl},
+		cp3:{x:60,y:180-legl}};
 
 	// everything is well defined and canvas is supported (if not then don't do anything)
 	if (missingData || !canvas.getContext) {
@@ -1839,6 +1889,13 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		HAIRCOLORB = "rgb(" + Math.floor(255-a) + "," + Math.floor(255-a) + "," + Math.floor(118+a) + ")";	
 	}
 
+	if (typeof eyelinerc === "function") {
+		EYELINER = eyelinerc(ctx);
+	}
+	else if (eyelinerc && isNaN(eyelinerc)) {
+		EYELINER = eyelinerc;
+	}
+
 	// use as much of the space as necessary
 	// use the minimum scaling from x and y, then take the rest as offset
 	var sx = canvas.width/180,
@@ -1944,10 +2001,14 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 
 	ctx.translate(0,0);
+	avatar.drawAdditional(ctx, ex, "underchin");
 	
 	// Draw central/common parts of the body, part 2
+	drawHead(ctx);
 	reflectHorizontal(ctx);
+	drawHead(ctx);
 	drawNose(ctx);
+
 	drawCleavage(ctx);
 
 	drawLips(ctx);
@@ -1971,6 +2032,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	reflectHorizontal(ctx);
 
 	avatar.drawAdditional(ctx, ex, "afterall");
+
+	ex.ctx = ctx;
+	return ex;
 };
 
 return da;

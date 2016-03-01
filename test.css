@@ -39,13 +39,17 @@ canvas {
 .curstat:after {
 	content:")";
 }
-#createchar, #randomizechar {
+#createchar, #randomizechar, #toggledrawpoints, .action-button {
 	width:100%;
 	height:39px;
 	border:none;
 	color:white;
 	background:orange;
 	font-family:consolas;
+}
+
+.action-button {
+	width:390px !important;
 }
 
 .wearing {

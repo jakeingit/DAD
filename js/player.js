@@ -118,18 +118,19 @@ var modLimits = {
 	browv: 		{low:0, high:100, avg:30,stdev:15,bias:-20},		// eyebrow volume/thickness
 	browr: 		{low:0, high:100, avg:30,stdev:15,bias:20},		// eyebrow roundedness
 };
+var modDiscretePool = {
+	eyelinerc:[""],
+};
 // fill out modifier for numerical stats if they don't exist
 (function(){
 	for (var p in statLimits) {
 		if (!modLimits.hasOwnProperty(p)) {
-			console.log("filling out mod", p);
 			// default
 			modLimits[p] = {low:-1e9, high:1e9, avg:0, stdev:1, bias:0};
 		}
 	}
 	for (p in physiqueLimits) {
 		if (!modLimits.hasOwnProperty(p)) {
-			console.log("filling out mod", p);
 			// default
 			modLimits[p] = {low:-1e9, high:1e9, avg:0, stdev:1, bias:0};
 		}
@@ -199,7 +200,14 @@ function getDefault(limits, discretePool) {
 // used to generate default values
 var defaultStats = da.defaultStats = getDefault(statLimits);
 var defaultPhysique = da.defaultPhysique = getDefault(physiqueLimits, physiqueDiscretePool);
-var defaultMods = da.defaultMods = getDefault(modLimits);
+var defaultMods = da.defaultMods = getDefault(modLimits, modDiscretePool);
+var defaultWorn = da.defaultWorn = {	
+	// each maps a layer to a clothing name 
+	top:{},
+	bot:{},
+	shoes:{},
+	acc:{},
+};
 // class definition for Player
 var Player = da.Player = function(data) {
 	Object.assign(this, {	// default value construction; overriden by properties of data passed in
@@ -208,12 +216,11 @@ var Player = da.Player = function(data) {
 		// physique for drawing
 		physique: defaultPhysique(),
 				
+		// what is being worn or wielded
+		worn 	: defaultWorn,
 		// inventory
-		top		: "",
-		bot		: "",
-		shoes	: "",
-		acc		: [],
-		back	: [],
+		inv		: [],
+
 		
 		// sex organ status and history
 		value_virginity	: false,
@@ -226,6 +233,21 @@ var Player = da.Player = function(data) {
 		fetishes 	: [],
 		traits		: [],
 	}, defaultStats(), data);
+
+	// apply modifiers
+	for (var loc in this.worn) {
+		for (var layer in this.worn[loc]) {
+			var cname = this.worn[loc][layer];
+			if (!da.clothes.hasOwnProperty(cname)) continue;
+			var cc = da.clothes[cname];
+			for (var mod in modLimits) {
+				if (cc.hasOwnProperty(mod) && !isNaN(cc[mod])) {
+					console.log("adding",cc[mod],mod);
+					this.Mods[mod] += cc[mod];
+				}
+			}
+		}
+	}
 };
 // first define as local variable to avoid circular referencing
 // purpose is to put them close to each other on top for ease of use
@@ -239,22 +261,18 @@ Player.femBias = femBias;
 
 // ---- player drawing functions ----
 Player.prototype.selectClothing = function(drawAt) {
-	// selector is a filter function taking in a clothing object and returning boolean
+	// drawAt is the drawing time (which point in the drawing process) the clothes wants to be drawn at
 	// returns an array of {layer:layer of clothing, draw:draw function} since 
 	// sometimes 1 piece of clothing needs multiple parts to be drawn at different points (a shirt)
 	drawAt = "draw"+drawAt;
 	var toDraw = [];
-	var wornClothes = ["top", "bot", "shoes"];
-	for (var i=0; i < wornClothes.length; ++i) {
-		var c = da.clothes[this[wornClothes[i]]];
-		if (c && typeof c[drawAt] === "function") 
-			toDraw.push({layer:c.layer,draw:c[drawAt]});
-	}
-	// draw accessories (same as above)
-	for (var i=0; i < this.acc.length; ++i) {
-		var c = da.clothes[this.acc[i]];
-		if (c && typeof c[drawAt] === "function") 
-			toDraw.push({layer:c.layer,draw:c[drawAt]});
+	for (var loc in this.worn) {
+		var locWorn = this.worn[loc];
+		for (var layer in locWorn) {
+			var c = da.clothes[locWorn[layer]];
+			if (c && typeof c[drawAt] === "function") 
+				toDraw.push({layer:layer,draw:c[drawAt]});
+		}
 	}
 
 	// sort in order of layer with lower layer placed first
@@ -278,8 +296,10 @@ Player.prototype.drawAdditional = function(ctx, ex, selector) {
 Player.prototype.heightAdjust = function() {
 	// heel's height will make you taller!
 	var extraheight = 0;
-	if (this.shoes) {
-		extraheight += da.clothes[this.shoes].height;
+	// take the max height of what's being worn in shoes location
+	for (var layer in this.worn.shoes) {
+		if (da.clothes[this.worn.shoes[layer]] && da.clothes[this.worn.shoes[layer]].hasOwnProperty("height"))
+			extraheight = Math.max(extraheight, da.clothes[this.worn.shoes[layer]].height);
 	}
 
 	return extraheight;
@@ -287,22 +307,16 @@ Player.prototype.heightAdjust = function() {
 Player.prototype.isWearing = function(clothesName) {
 	if (!da.clothes.hasOwnProperty(clothesName)) return false;
 	var cc = da.clothes[clothesName];
-	if (cc.loc === "acc") {
-		return (this.acc.indexOf(clothesName) > -1);
-	}
-	return this[cc.loc] === clothesName;
+	return this.worn[cc.loc][cc.layer] === clothesName;
 };
 Player.prototype.changeClothes = function(clothesName) {
 	// change into da.clothes provided, doesn't handle removing from backpack since source agnostic!
-	if (!da.clothes.hasOwnProperty(clothesName)) return;
+	// returns clothing changed out of, if any, else null
+	if (!da.clothes.hasOwnProperty(clothesName)) return null;
 	var cc = da.clothes[clothesName];
 	if (this.isWearing(clothesName)) {	// change out of da.clothes
 		console.log("changing out of", clothesName);
-		if (cc.loc === "acc") {
-			this.acc.splice(this.acc.indexOf(clothesName), 1);	// remove
-		}
-		else
-			this[cc.loc] = "";
+		this.worn[cc.loc][cc.layer] = "";
 
 		// reset the previoiusly applied modifiers
 		for (var mod in modLimits) {
@@ -311,18 +325,15 @@ Player.prototype.changeClothes = function(clothesName) {
 			}
 		}		
 
-		this.back.push(clothesName);
+		return clothesName;
 	}
 	else {	// change into da.clothes
+		var changedOut = null;
 		console.log("changing into", clothesName);
-		if (cc.loc === "acc") {
-			this.acc.push(clothesName);
-		}
-		else {
-			if (this[cc.loc]) // already wearing something there, change out of it first
-				this.changeClothes(this[cc.loc]);
-			this[cc.loc] = clothesName;
-		} 
+
+		if (this.worn[cc.loc][cc.layer]) // already wearing something there, change out of it first
+			changedOut = this.changeClothes(this.worn[cc.loc][cc.layer]);
+		this.worn[cc.loc][cc.layer] = clothesName;
 
 		// apply modifiers
 		for (var mod in modLimits) {
@@ -331,6 +342,7 @@ Player.prototype.changeClothes = function(clothesName) {
 				this.Mods[mod] += cc[mod];
 			}
 		}
+		return changedOut;
 	}
 }
 
@@ -452,6 +464,7 @@ Player.prototype.calcPhysique = function() {
     this.clampPhysique();
 };
 Player.prototype.hasCock = function() {
+	if (this.Mods.penis > 4) return true;	// higher modifier overrides this
 	var tst = this.calcTestes(false);
 	return tst <= 11;
 };

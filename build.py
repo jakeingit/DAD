@@ -48,7 +48,9 @@ def parse_args(ns=None):
 
 	parser.add_argument("-s", "--source",
 		nargs="+",
-		default=["Context2DTracked.js", "utility.js", "names.js", "drawfigure.js", "player.js", "clothing.js"],
+		default=["matrix.js", "Context2DTracked.js", "utility.js", "names.js",
+		 "drawfigure.js", "player.js", 
+		 "patterns.js", "ctptop.js", "ctpbot.js", "ctpshoes.js", "ctpacc.js", "clothing.js"],
 		help="names of the JS source files in the order they should be added;\
 		default: %(default)s")
 

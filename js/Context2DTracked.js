@@ -1,10 +1,17 @@
 // namespace of Context2DTracked
 (function(namespace){
-
+	function Transform() {
+		// start as the identity transformation
+		this.val = [[1,0,0],
+					[0,1,0],
+					[0,0,1]];
+	}
 	// class definition on the namespace (probably global)
 	namespace.Context2DTracked = function(target){
 		// target is Canvas Context2D that will be wrapped and tracked
 		this.context = target;
+
+		this.tf = [new Matrix(target)];	// keep track of transformations
 
 		// tracking where the current pen is on the canvas
 		this.penx = 0;
@@ -42,15 +49,33 @@
 			}
 		}
 
+		// transformation handling
+		this.save = function() {
+			this.tf.push(this.tf.last().clone());
+			target.save();
+		}
+		this.restore = function() {
+			this.tf.pop();
+			target.restore();
+		}
+		this.transformPoint = function(x, y) {
+			// transforms a point into context coordinates
+			var invtf = this.tf.last().inverse();
+			return invtf.applyToPoint(x,y);
+		}
 		this.scale = function(x, y) {
-			this.scalex *= x;
-			this.scaley *= y;
-			target.scale(x,y);
+			this.tf.last().scale(x,y);
+			// target.scale(x,y);
 		}
 		this.translate = function(x, y) {
-			this.ox += x;
-			this.oy += y;
-			target.translate(x,y);
+			// this.ox += x;
+			// this.oy += y;
+			// target.translate(x,y);
+			this.tf.last().translate(x,y);
+		}
+		this.rotate = function(angle) {
+			// target.rotate(angle);
+			this.tf.last().rotate(angle);
 		}
 		this.movePen = function(x,y) {
 			if (this.justBegun) {
