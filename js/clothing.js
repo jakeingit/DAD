@@ -61,7 +61,7 @@ var clothes = da.clothes = {
 		price: 	350,
 		blunt: 	0,
 		loc: 	"top",
-		layer: 	2.5,
+		layer: 	2,
 		longdesc:["TODO"].join(" "),
 		drawunderbreasts: ctp.top.drawTurtleNeck("rgb(200,200,200)",da.getPattern("white_cashmere")),
 		drawunderhair: ctp.top.drawLongSleeveBreasts("rgb(200,200,200)",da.getPattern("white_cashmere")),

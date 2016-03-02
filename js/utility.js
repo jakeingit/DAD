@@ -267,5 +267,8 @@ var getFullDrawer = da.getFullDrawer = function(stroke, fill, lineWidth, drawHal
 }
 
 
+
+
+
 return da;
 }(da || {}));
