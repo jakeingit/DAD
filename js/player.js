@@ -211,14 +211,7 @@ var defaultWorn = da.defaultWorn = {
 // class definition for Player
 var Player = da.Player = function(data) {
 	Object.assign(this, {	// default value construction; overriden by properties of data passed in
-		// modifiers
-		Mods 	: defaultMods(),
-		// physique for drawing
-		physique: defaultPhysique(),
-				
-		// what is being worn or wielded
-		worn 	: defaultWorn,
-		// inventory
+		// mods, physique, worn require dynamic default value construction, so are assigned separately
 		inv		: [],
 
 		
@@ -233,6 +226,10 @@ var Player = da.Player = function(data) {
 		fetishes 	: [],
 		traits		: [],
 	}, defaultStats(), data);
+	// upgrade with newer default values if necessary so saves are compatible (new stat wouldn't be missing)
+	this.Mods = Object.assign({}, defaultMods(), data.Mods);
+	this.physique = Object.assign({}, defaultPhysique(), data.physique);
+	this.worn = Object.assign({}, defaultWorn, data.worn);
 
 	// apply modifiers
 	for (var loc in this.worn) {
@@ -490,8 +487,12 @@ Player.prototype.toJSON = function () {
 		are passed to the constructor, thus restoring the state of the
 		original object upon deserialization.
 	*/
+	// some properties need to be updated to have the latest default values
+	// var rev
+
 	return JSON.reviveWrapper('new da.Player('+ JSON.stringify(Object.assign({}, this)) + ')');
 };
+
 Player.prototype.toString = function() {
 	return this.name;
 };
@@ -506,7 +507,7 @@ var getBiasMod = da.getBiasMod = function(prop, propName) {
 }
 var createRandomCharacter = da.createRandomCharacter = function(bias) {
 	// bias is a number from 0 to 1 with 1 being the most feminine bias and 0 most masculine bias
-	var pc = new Player();
+	var pc = new da.Player();
 	// first generate all physique since later calculated physique from core stats will override some values
 	for (var p in Player.physiqueLimits) {
 		var physique = Player.physiqueLimits[p];
