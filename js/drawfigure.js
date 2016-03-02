@@ -41,7 +41,7 @@ var drawPoints = da.drawPoints = function(ctx) {
 };
 
 var tracePoint = da.tracePoint = function(point, radius) {
-	// add a trace to a drawpoint when giving to drawPoints function
+	// add a trace to a drawpoint when giving to da.drawPoints function
 	return Object.assign({trace:true,traceSize:radius},point);
 }
 
@@ -84,7 +84,10 @@ da.getCanvas = function(canvasName, styleOverride) {
 
 		// add the rest of the styling
 		for (var s in styles) {
-			if (styles.hasOwnProperty(s) && s !== "width" && s !== "height") {
+			if (s === "width" || s === "height") {
+				canvas.style[s] = styles[s]+"px";
+			}
+			else if (styles.hasOwnProperty(s)) {
 				canvas.style[s] = styles[s];
 			}
 		}
@@ -439,7 +442,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var sp = da.splitQuadratic({p1:ex.mons.right, p2:ex.mons.left, cp1:ex.mons.left.cp1},0.5);
 		ex.mons.tip = sp.right.p1;
 
-		drawPoints(ctx, ex.mons.right, ex.mons.left);
+		da.drawPoints(ctx, ex.mons.right, ex.mons.left);
 	}
 	
 	function drawPregs(ctx){
@@ -922,7 +925,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		ex.eye.tearduct = {x:ex.eye.incorner.x+0.4, y:ex.eye.incorner.y+1.2};
 
-		drawPoints(ctx, ex.eye.incorner, ex.eye.out, ex.eye.in, ex.eye.tearduct);
+		da.drawPoints(ctx, ex.eye.incorner, ex.eye.out, ex.eye.in, ex.eye.tearduct);
 	}
 	
 	function drawEyelids(ctx)
@@ -947,7 +950,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			cp1:{x:ex.eye.in.cp2.x -eyes/15, y:ex.eye.in.cp2.y +eyes/10},
 			cp2:{x:ex.eye.in.cp1.x +eyes/8, y:ex.eye.in.cp1.y +eyes/10}};
 
-		drawPoints(ctx, ex.eye.out, ex.eye.lid.in, ex.eye.lid.out);
+		da.drawPoints(ctx, ex.eye.out, ex.eye.lid.in, ex.eye.lid.out);
 	}
 	function calcIris() {	// need to do this before drawing eyes in case ex.iris's position is needed
 		var x = face / 20;
@@ -1001,7 +1004,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			y:bendpoint*ex.brow.in.y+(1-bendpoint)*ex.brow.out.y -browc*0.4}
 
 
-		drawPoints(ctx, ex.brow.out, ex.brow.in, ex.brow.bot, ex.brow.out);
+		da.drawPoints(ctx, ex.brow.out, ex.brow.in, ex.brow.bot, ex.brow.out);
 	}
 	
 	function drawLips(ctx)
@@ -1277,7 +1280,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.collarbone = {x:41 + b, y:72 - d,
 				cp1:{x:50 + b, y:64 + b}};
 
-			drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
+			da.drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
 				ex.trapezius.top, ex.collarbone);
 
 			if (a < 6) {
@@ -1335,7 +1338,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.waist = {x:47 + (c * 3) - (h / 4), y:149 - (h + a),
 				cp1:{x:43 + (c * 3), y:145 - (h + a + b)}};
 			
-			drawPoints(ctx, null, ex.deltoids, ex.shoulder, ex.elbow.out, 
+			da.drawPoints(ctx, null, ex.deltoids, ex.shoulder, ex.elbow.out, 
 				ex.wrist.out, ex.hand.knuckle, ex.hand.tip, ex.hand.palm, ex.thumb.tip, ex.wrist.in,
 				ex.ulna, ex.elbow.in, ex.armpit, ex.trapezius.bot, ex.waist);
 
@@ -1420,7 +1423,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			// down to narrowest part of waist
 
 
-			drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
+			da.drawPoints(ctx, ex.neck.nape, ex.neck.top, ex.neck.cusp, 
 				ex.collarbone, ex.shoulder, ex.elbow.out, ex.wrist.out,
 				ex.hand.knuckle, ex.hand.tip, ex.hand.palm, ex.thumb.in, ex.thumb.out,
 				ex.ulna, ex.elbow.in, ex.humorous, ex.armpit, ex.waist);
@@ -1485,7 +1488,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		}	
 
 		// actual drawing after defining draw points
-		drawPoints(ctx, null, ex.kneepit, ex.calf.out);
+		da.drawPoints(ctx, null, ex.kneepit, ex.calf.out);
 	}
 
 	function drawLegs(ctx)
@@ -1541,7 +1544,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.groin.in = {x:79, y:205 - legs/5 -legl*1.1,
 				cp1:{x:79, y:208 - legs/5}};
 
-			drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
+			da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
 				ex.toe.out, ex.toe.pinkie, ex.toe.in, ex.ankle.in, ex.ankle.intop,
 				ex.calf.in, ex.kneecap, ex.groin, ex.groin.in);
 
@@ -1566,7 +1569,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.ankle.out = {x:39 + (a + b + b + d + b), y:364, 
 				cp1:{x:38 + (a + b + b + d + b), y:357}};
 
-			drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out);
+			da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out);
 
 			/*Foot*/
 			if (shoeheight < 3) {	// not wearing heels
@@ -1598,7 +1601,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
 
-				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop,
+				da.drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop,
 					ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 			else {
@@ -1621,7 +1624,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				ex.ankle.intop.cp1 = {x:ex.ankle.in.x+2, y:ex.ankle.in.y-2};
 				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
 
-				drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop, ex.calf.in);
+				da.drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 
 			/*Inner-Leg*/
@@ -1640,7 +1643,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.groin.in = {x:79, y:ex.groin.y,
 				cp1:{x:79, y:204-legl*1.1}};
 
-			drawPoints(ctx, null, ex.kneecap, ex.kneecap.top, ex.groin, ex.groin.in);
+			da.drawPoints(ctx, null, ex.kneecap, ex.kneecap.top, ex.groin, ex.groin.in);
 		}
 	}
 	

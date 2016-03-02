@@ -6,7 +6,7 @@ da.ctp = {};
 var clothesPatterns = da.clothesPatterns = {};
 
 /** convert an image object into byte array of RGB */
-da.imagify = function(img, success) {
+da.imgToStr = function(img, success) {
   // do this by creating a canvas object, drawing the image to it, then
   var canvas = document.createElement("canvas");
   document.body.appendChild(canvas);
@@ -22,17 +22,16 @@ da.imagify = function(img, success) {
   dataStr += String.fromCharCode.apply(null, imgData.data);
   dataStr = btoa(dataStr);
 
-
   console.log(dataStr);  
   if (success) success(dataStr, ctx);
 
   return dataStr;
 };
 
-da.imgToStr = function(src) {
+da.srcToStr = function(src) {
   var img = new Image();
   img.onload = function(){
-    da.imagify(img);
+    da.imgToStr(img);
   }
   img.src = src;
 }

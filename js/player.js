@@ -307,7 +307,6 @@ Player.prototype.heightAdjust = function() {
 Player.prototype.isWearing = function(clothesName) {
 	if (!da.clothes.hasOwnProperty(clothesName)) return false;
 	var cc = da.clothes[clothesName];
-	console.log(cc);
 	return this.worn[cc.loc][cc.layer] === clothesName;
 };
 Player.prototype.changeClothes = function(clothesName) {
@@ -491,7 +490,7 @@ Player.prototype.toJSON = function () {
 		are passed to the constructor, thus restoring the state of the
 		original object upon deserialization.
 	*/
-	return JSON.reviveWrapper('new Player('+ JSON.stringify(Object.assign({}, this)) + ')');
+	return JSON.reviveWrapper('new da.Player('+ JSON.stringify(Object.assign({}, this)) + ')');
 };
 Player.prototype.toString = function() {
 	return this.name;

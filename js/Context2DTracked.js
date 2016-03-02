@@ -160,6 +160,18 @@
 			this.bpenx = ex;
 			this.bpeny = ey;
 		}
+		this.ellipse = function(x, y, rx, ry, rot, sa, ea, anticlockwise) {
+			if (target.ellipse) target.ellipse.apply(target, arguments);
+			else {
+				// polyfill
+			    this.save();
+			    this.translate(x, y);
+			    this.rotate(rot);
+			    this.scale(rx, ry);
+			    this.arc(0, 0, 1, sa, ea, anticlockwise);
+			    this.restore();				
+			}
+		}
 		this.arcTo = function(x1, y1, x2, y2, radius) {
 			// Don't use this please; no idea how to calculate the ending location...
 			target.arcTo(x1, y1, x2, y2, radius);

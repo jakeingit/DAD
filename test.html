@@ -18,6 +18,9 @@
 		<div id="inventory"> </div>
 		<div id="chargen"><button id="randomizechar">Randomize Character</button></div>
 		<button class="action-button" id="toggledrawpoints">Toggle Drawpoints</button>
+		<div id="imgtostr"><input type="file" id="imgupload" accept="image/*" style="display:none" onchange="processUploadedFiles(this.files)">
+			<button class="action-button" id="imguploadbtn">Make Custom Texture (drag and drop to canvas)<br>
+			(use small tilable images, like 10x10px)</button></div>
 		<!-- <button class="action-button" id="drawcurve">Start/Finish drawing</button> -->
 	</div>
 	<div id="slidersM" style="border:1px solid black;"></div>
@@ -127,8 +130,8 @@ var canvas_holder = document.getElementById("testbody");
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
-	width:900,
-	height:1500,
+	// width:900,
+	// height:1500,
 });
 
 
@@ -373,7 +376,8 @@ function redrawPage(PC) {
 		}.bind(null, p)});
 		var cur = $(['<div class="curstat" id="cur',p,'mod">',PC.Mods[p],'</div>'].join("")).appendTo(holder);
 	}
-
+		
+	
 	$("#createchar").click(function() {
 	var PCserialized = eval(JSON.stringify(PC))[1];
 	// eval PCserialized to revive PC
@@ -382,8 +386,51 @@ function redrawPage(PC) {
 
 }
 
+function processUploadedFiles(files) {
+	var imgType = /^image\//;
+
+	for (var i = 0, nf = files.length; i < nf; ++i) {
+		var file = files[i];
+		console.log(file.type, file.size, file.name);
+		if (!imgType.test(file.type)) continue;
+
+		var img = new Image();
+		img.onload = function() {
+			if (img.width * img.height > 1000) {
+				window.alert("image size too large!");
+			}
+			else {
+				da.imgToStr(img, function(dataStr) {
+					// give users the code in copy pastable format
+					window.prompt("Copy to clipboard: Ctrl+C, Enter\n set as a property of da.producePattern[name_for_pattern] = <copied_stuff>",
+						"function(ctx){return da.strToPat(ctx,'"+dataStr+"');},");
+				});
+			}
+		}
+		img.src = URL.createObjectURL(file);
+	}
+}
+
 // clothes need to be created so wait inside
 $(document).ready(function() {
+	// allow user upload of patterns
+	var imgupload = document.getElementById("imgupload");
+	var imguploadbtn = document.getElementById("imguploadbtn");
+	imguploadbtn.addEventListener("click", function(e) {
+		if (imgupload) imgupload.click();
+		e.preventDefault();
+	}, false);
+	// drag and drop as well, why not
+	canvas.addEventListener("dragenter",function(e){e.stopPropagation();e.preventDefault();},false);
+	canvas.addEventListener("dragover",function(e){e.stopPropagation();e.preventDefault();},false);
+	canvas.addEventListener("drop", function(e){
+		e.stopPropagation();
+		e.preventDefault();
+		var dt = e.dataTransfer;
+		var files = dt.files;
+		processUploadedFiles(files);
+	},false);
+
 	// add a pattern
 	da.preloadPattern({name:"checkered", reptition:"repeat", format:"png", dataurl:"iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjE3NDQ1MDdCREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjE3NDQ1MDdDREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTc0NDUwNzlEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MTc0NDUwN0FEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz79WpsFAAAAJElEQVR42mL8//8/AxJgZGRE5jIx4AU0lWZE46O5dCCdBhBgAEU3BhAw4WsWAAAAAElFTkSuQmCC"});
 
