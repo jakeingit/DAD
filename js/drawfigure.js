@@ -24,8 +24,9 @@ var drawPoints = da.drawPoints = function(ctx) {
 	// for every point after
 	for (var i = 2, len = arguments.length; i < len; ++i) {
 		var p = arguments[i];
+		// allow calls with nonexistent points so that different drawing modes can be consolidated
 		if (!p) {
-			console.log("don't have point #", i);
+			// console.log("don't have point #", i);
 			continue;
 		}
 		if (p.hasOwnProperty("cp2")) {
@@ -1025,16 +1026,26 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var e = a / 10;
 		var y = -0.17;
 		
-		ex.mouth.mid = {x:79+lipw*0.1, y:50+liph*0.1 + lipc*0.1};
+		ex.mouth.mid = {x:79, y:49+liph*0.1 + lipc*0.1 +lips*0.02};
+		ex.mouth.top = {x:ex.mouth.mid.x, y:ex.mouth.mid.y -lips*0.06 -lipt*0.1};
 
 
-		ex.mouth.left = {x:76 - d -lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
+		ex.mouth.left = {x:ex.mouth.mid.x -5.2  -lips*0.11 -lipw*0.1, y:ex.mouth.mid.y +0.9 +lipc*0.1 -lips*0.05};
 		// center to left
 
-		ex.mouth.right = {x:82 + d+lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
+		// clone the left mouth's x
+		ex.mouth.right = {x:2*ex.mouth.mid.x-ex.mouth.left.x, y:ex.mouth.left.y};
 		// left to right
 
+
 		if (lips < -10 || lipt < -3 || (lipw > lips*1.5)) {	// very thin lips
+			ex.mouth.mid = {x:79+lipw*0.1, y:50+liph*0.1 + lipc*0.1};
+			ex.mouth.left = {x:76 - d -lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
+			// center to left
+			ex.mouth.right = {x:82 + d+lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
+
+
+
 			ctx.moveTo(ex.mouth.left.x, ex.mouth.left.y);
 
 			ctx.bezierCurveTo(ex.mouth.left.x+2, ex.mouth.left.y -lipc*0.2,
@@ -1048,30 +1059,24 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ctx.lineTo(ex.mouth.mid.x+2, ex.mouth.mid.y+2);
 			ctx.lineWidth = 0.5;
 			ctx.stroke();
-			// ctx.lineCap = "butt";
-
 		}
 		else {
-			ex.mouth.mid.cp1 = {x:81 - e, y:ex.mouth.mid.y - (e * 1.2) -lipt*0.1 -lipc*0.2}; // positive curl moves it down into :(
-			ex.mouth.left.cp1 = {x:77 + e, y:ex.mouth.mid.y - (e * 1.2) -lipt*0.1 -lipc*0.2};
-			ex.mouth.right.cp1 = {x:79, y:ex.mouth.mid.y + 1.1 + d +lipt*0.1 -lipc*0.1};
+			ex.mouth.left.cp1 = {x:77 +lips*0.01, y:ex.mouth.mid.y - lips*0.1 -lipt*0.1 -lipc*0.2};
+			ex.mouth.right.cp1 = {x:77, y:ex.mouth.mid.y + 3.1 + lips*0.07 +lipt*0.1 -lipc*0.1};
+			ex.mouth.right.cp2 = {x:81, y:ex.mouth.right.cp1.y};
 
+			ex.mouth.top.cp1 = {x:81 -lips*0.01, y:ex.mouth.left.cp1.y}; // positive curl moves it down into :(
 
-			ctx.moveTo(ex.mouth.mid.x, ex.mouth.mid.y);
+			var sp = da.splitCurve(ex.mouth.left, ex.mouth.right, 0.5);
+			ex.mouth.bot = sp.left.p2;
+			ex.mouth.bot.cp1 = sp.left.cp2, ex.mouth.bot.cp2 = sp.right.cp2;
 
-			ctx.quadraticCurveTo(ex.mouth.left.cp1.x, ex.mouth.left.cp1.y, 
-				ex.mouth.left.x, ex.mouth.left.y);
-
-			ctx.quadraticCurveTo(ex.mouth.right.cp1.x, ex.mouth.right.cp1.y, ex.mouth.right.x, ex.mouth.right.y);
-
-			ctx.quadraticCurveTo(ex.mouth.mid.cp1.x, ex.mouth.mid.cp1.y, ex.mouth.mid.x, ex.mouth.mid.y);
-			
-			ctx.lineWidth = 2.3 + (lips / 40);
+			da.drawPoints(ctx, ex.mouth.top, ex.mouth.left, ex.mouth.right, ex.mouth.top);
+			ctx.fill();
 		}
 
 		ctx.miterLimit = 5;
 		
-		ctx.stroke();
 	}
 	
 	function drawNose(ctx)
@@ -1083,6 +1088,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.lineWidth = (21 - face) / 15;
 		if (ctx.lineWidth < 1) ctx.lineWidth = 1;
 		
+		ex.nose = {};
 		/*Nose*/
 		var a = face;
 		var b = a / 2;
@@ -1092,13 +1098,10 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		var y = 23;
 		
 		if (a < 11) {
-			ex.topnose = {x:80+noseskew*0.2, y:y+8+e};
-			ex.tipnose = {x:83 - e, y:y + 20 - e};
-			ex.botnose = {x:80, y:y + 22 - e};
+			ex.nose.top = {x:80+noseskew*0.2, y:y+8+e};
+			ex.nose.tip = {x:83 - e, y:y + 20 - e};
+			ex.nose.bot = {x:80, y:y + 22 - e};
 
-			ctx.moveTo(ex.topnose.x, ex.topnose.y);
-			ctx.lineTo(ex.tipnose.x, ex.tipnose.y);
-			ctx.lineTo(ex.botnose.x, ex.botnose.y);
 		} else{
 			var a = face - 11;
 			if (face > 20) a = 9;
@@ -1111,18 +1114,19 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				z = face - 20;
 				z = z / 10;
 			}
-			ex.topnose = {x:80+noseskew*0.2, y:y+8+e};
-			ex.tipnose = {x:82 - z, y:y + 19 - (e + z)};
-			ex.botnose = {x:80 - e, y:y + 20 - z};
+			ex.nose.top = {x:80+noseskew*0.2, y:y+8+e};
+			ex.nose.tip = {x:82 - z, y:y + 19 - (e + z)};
+			ex.nose.bot = {x:80 - e, y:y + 20 - z};
 
-			ctx.moveTo(ex.topnose.x, ex.topnose.y);
-			ctx.bezierCurveTo(ex.topnose.x, ex.topnose.y+3,
-				ex.tipnose.x-0.4, ex.tipnose.y-0.5,
-				ex.tipnose.x, ex.tipnose.y);
-			ctx.bezierCurveTo(ex.tipnose.x+0.5, ex.tipnose.y+1,
-				ex.botnose.x+0.4, ex.botnose.y+0.3,
-				ex.botnose.x, ex.botnose.y);
+			ex.nose.tip.cp1 = {x:ex.nose.top.x, y:ex.nose.top.y+3};
+			ex.nose.tip.cp2 = {x:ex.nose.tip.x-0.4, y:ex.nose.tip.y-0.5};
+			
+			ex.nose.bot.cp1 = {x:ex.nose.tip.x+0.5, y:ex.nose.tip.y+1};
+			ex.nose.bot.cp2 = {x:ex.nose.bot.x+0.4, y:ex.nose.bot.y+0.3};
+
 		}
+
+		da.drawPoints(ctx, ex.nose.top, ex.nose.tip, ex.nose.bot);
 		ctx.stroke();
 	}
 	
@@ -1316,7 +1320,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				cp1:{x:22 + c - g, y:212 + (d - b)}};
 
 			// no inner and outer thumb, end point is the thumb tip
-			ex.thumb.tip = {x:26 - g, y:222 - (b + c)};
+			ex.thumb.tip = {x:ex.hand.tip.x, y:ex.hand.tip.y};
 
 			ex.wrist.in = {x:19 + d - g, y:202 - (b + c),
 				cp1:{x:32 - g, y:222 - (b + d)}};
@@ -1400,6 +1404,9 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.thumb.out = {x:23 + x + y + c - (g + (z/2)), y:194 + a + d - z,
 				cp1:{x:35 + x + y - (a + e + g + z), y:215 + e - z}};
 			// past the thumb
+			var sp = da.splitCurve(ex.thumb.in, ex.thumb.out, da.clamp(-0.5+shoulders*0.05,0.1,0.5));
+			ex.thumb.tip = sp.left.p2;
+			ex.thumb.tip.cp1 = sp.left.cp1;
 
 			/*Inner Arm*/
 			ex.ulna = {x:22 + (x / 2) + b + b + a - (g / 2), y:191 - (f + z),
@@ -1544,10 +1551,6 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.groin.in = {x:79, y:205 - legs/5 -legl*1.1,
 				cp1:{x:79, y:208 - legs/5}};
 
-			da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
-				ex.toe.out, ex.toe.pinkie, ex.toe.in, ex.ankle.in, ex.ankle.intop,
-				ex.calf.in, ex.kneecap, ex.groin, ex.groin.in);
-
 		} else {
 			var a = 9;
 			if (legs <= 20) a = legs - 11;
@@ -1569,7 +1572,6 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.ankle.out = {x:39 + (a + b + b + d + b), y:364, 
 				cp1:{x:38 + (a + b + b + d + b), y:357}};
 
-			da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out);
 
 			/*Foot*/
 			if (shoeheight < 3) {	// not wearing heels
@@ -1601,14 +1603,11 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
 
-				da.drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop,
-					ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 			else {
 				// bottom ankle bone
 				ex.ankle.outbot = {x:ex.ankle.out.x, y:ex.ankle.out.y+5};
 				ex.ankle.outbot.cp1 = {x:ex.ankle.outbot.x-1, y:ex.ankle.outbot.y-1.5};
-
 
 				var legaddition = legs;
 				if (legaddition > 30) legaddition = 30;
@@ -1624,7 +1623,6 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				ex.ankle.intop.cp1 = {x:ex.ankle.in.x+2, y:ex.ankle.in.y-2};
 				ex.calf.in = {x:50 + b + (a + b + c + b), y:353 - a};
 
-				da.drawPoints(ctx, null, ex.ankle.outbot, ex.toe.out, ex.toe.in, ex.ankle.in, ex.ankle.intop, ex.calf.in);
 			}
 
 			/*Inner-Leg*/
@@ -1643,10 +1641,15 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			ex.groin.in = {x:79, y:ex.groin.y,
 				cp1:{x:79, y:204-legl*1.1}};
 
-			da.drawPoints(ctx, null, ex.kneecap, ex.kneecap.top, ex.groin, ex.groin.in);
 		}
+
+		// consolidated drawing of legs (some points will always be null for either masculinity)
+		da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
+			ex.toe.out, ex.toe.pinkie, ex.toe.mid, ex.toe.in, ex.toe.intop, ex.ankle.in, ex.ankle.intop,
+			ex.calf.in, ex.kneecap, ex.kneecap.top, ex.groin, ex.groin.in);
 	}
-	
+
+
 	function drawHalfFigure1(ctx)
 	{
 		ctx.fillStyle = SKINC;
@@ -1661,7 +1664,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.fill();
 		ctx.stroke();
 
-
+		// extra detail drawing
 		drawAbs(ctx);
 		ctx.stroke();
 		drawPecs(ctx);
@@ -2031,6 +2034,12 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	ex.scaling = scaling;
 	ex.sx = sx;
 	ex.sy = sy;
+
+	// where shoes are allowed to draw
+	ex.shoebox = {
+		x:-ox-10, y:-oy+300,
+		width:ox+70, height:oy+90
+	};
 
 	reflectHorizontal(ctx);
 

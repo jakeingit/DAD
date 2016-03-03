@@ -213,7 +213,9 @@ var Player = da.Player = function(data) {
 	Object.assign(this, {	// default value construction; overriden by properties of data passed in
 		// mods, physique, worn require dynamic default value construction, so are assigned separately
 		inv		: [],
-
+		Mods 	: defaultMods(),
+		physique: defaultPhysique(),
+		worn 	: defaultWorn,
 		
 		// sex organ status and history
 		value_virginity	: false,
@@ -227,9 +229,12 @@ var Player = da.Player = function(data) {
 		traits		: [],
 	}, defaultStats(), data);
 	// upgrade with newer default values if necessary so saves are compatible (new stat wouldn't be missing)
-	this.Mods = Object.assign({}, defaultMods(), data.Mods);
-	this.physique = Object.assign({}, defaultPhysique(), data.physique);
-	this.worn = Object.assign({}, defaultWorn, data.worn);
+	if (data) {
+		this.Mods = Object.assign({}, defaultMods(), data.Mods);
+		this.physique = Object.assign({}, defaultPhysique(), data.physique);
+		this.worn = Object.assign({}, defaultWorn, data.worn);
+	}
+
 
 	// apply modifiers
 	for (var loc in this.worn) {
@@ -375,7 +380,7 @@ Player.prototype.getSub = function() {
 };
 Player.prototype.calcSkin = function() {
 	if (isNaN(this.physique.skin)) return this.physique.skin;	// already set, just pass through
-	return -this.skin + this.Mods.skinc;	// -10 is porcelein
+	return -(this.skin+this.Mods.skin) + this.Mods.skinc;	// -10 is porcelein
 };
 Player.prototype.calcFace = function() {
 	// higher value is more feminine
@@ -391,7 +396,7 @@ Player.prototype.calcLips = function() {
 	return l;
 };
 Player.prototype.calcHairLength = function() {
-	var v = this.hair*2 + this.getFem() + this.getSub() + this.Mods.hairlength;
+	var v = (this.hair+this.Mods.hair)*2 + this.getFem() + this.getSub() + this.Mods.hairlength;
 	return v;
 };
 Player.prototype.calcShoulders = function() {
@@ -412,7 +417,7 @@ Player.prototype.calcBreasts = function() {
 	return v;
 };
 Player.prototype.calcNipples = function() {
-	return this.getFem()*0.6 + this.breast + this.Mods.shoulders;
+	return this.getFem()*0.6 + this.breast + this.Mods.shoulders + this.Mods.nipples;
 };
 Player.prototype.calcTestes = function(considerMods) {
 	// higher is more feminine
@@ -436,7 +441,7 @@ Player.prototype.calcHips = function() {
 	return (this.getFem() + this.hips)*1.2 - 2 + this.Mods.hips;
 };
 Player.prototype.calcAss = function() {
-	return this.getFem() + this.Mods.ass + this.butt;
+	return this.getFem() + this.Mods.ass + this.butt + this.Mods.butt;
 };
 Player.prototype.calcLegs = function() {
 	return this.getFem()*1.5 + this.getSub()*2 - this.str + this.Mods.legs;

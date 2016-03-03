@@ -111,11 +111,11 @@ da.ctp.shoes.drawShortBoots = function(stroke, fill) {
 		ctx.save();
 
 		ctx.beginPath();
-		ctx.rect(-ex.ox, -ex.oy+300, ex.ox+20, ex.oy+90);
+		ctx.rect(ex.shoebox.x, ex.shoebox.y, ex.shoebox.width, ex.shoebox.height);
 		// ctx.stroke();
 		ctx.clip();	// don't draw shoes outside of this box
 
-		var toetip = {x:-ex.ox+5, y:382};
+		var toetip = {x:ex.shoebox.x*0.7, y:ex.shoebox.y+ex.shoebox.height-10};
 		var archtip = {x:toetip.x+54, y:toetip.y-1};
 		var heeltip = {x:archtip.x, y:archtip.y+3};
 		var heelback = {x:heeltip.x+20, y:heeltip.y-2};
@@ -253,12 +253,12 @@ da.ctp.shoes.drawHeels = function(stroke, fill, drawDetails, drawSideDetails) {
 	function drawSide(ctx, ex, mods) {
 		ctx.save();
 		ctx.beginPath();
-		ctx.rect(-ex.ox, -ex.oy+300, ex.ox+20, ex.oy+90);
+		ctx.rect(ex.shoebox.x, ex.shoebox.y, ex.shoebox.width, ex.shoebox.height);
 		// ctx.stroke();
 		ctx.clip();	// don't draw shoes outside of this box
 
 
-		var toetip = {x:-ex.ox+15, y:377};
+		var toetip = {x:ex.shoebox.x*0.7, y:ex.shoebox.y+ex.shoebox.height-15};
 		ctx.beginPath();
 		ctx.moveTo(toetip.x, toetip.y);
 
@@ -343,12 +343,12 @@ da.ctp.shoes.sideDetails.drawHeelStrapDetails = function(stroke) {
 	function draw(ctx, ex, mods) {
 		ctx.save();
 		ctx.beginPath();
-		ctx.rect(-ex.ox, -ex.oy+300, ex.ox+20, ex.oy+90);
+		ctx.rect(ex.shoebox.x, ex.shoebox.y, ex.shoebox.width, ex.shoebox.height);
 		// ctx.stroke();
 		ctx.clip();	// don't draw shoes outside of this box
 
 
-		var toetip = {x:-ex.ox+15, y:377};
+		var toetip = {x:ex.shoebox.x*0.7, y:ex.shoebox.y+ex.shoebox.height-15};
 		var archtip = {x:toetip.x+65-ex.shoeheight*4, y:toetip.y-ex.shoeheight*5};
 		var heelback = {x:archtip.x+10, y:archtip.y};
 		var countertip = {x:archtip.x+4, y:heelback.y-19};

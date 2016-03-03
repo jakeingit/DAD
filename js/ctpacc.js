@@ -70,52 +70,34 @@ da.ctp.acc.drawThighSocks = function(stroke, pattern) {
 
 }
 
+da.drawNail = function(ctx, pt, w, h, rot) {
+	rot = rot || 0;
+	ctx.save();
+	ctx.translate(pt.x,pt.y);
+	ctx.rotate(rot);
+	ctx.moveTo(0,0);
+	ctx.bezierCurveTo(-w, -h, +w, -h, 0, 0);
+	ctx.fill();
+	ctx.restore();
+	ctx.translate(0,0);
+};
+
 da.ctp.acc.drawMakeup = function(lipcolor, nailcolor) {
 	function drawLipStick(ctx, ex, mods) {
-		var lips = this.lips;
-
 		// just draw right over lips
-		da.drawPoints(ctx, ex.mouth.mid, ex.mouth.left, ex.mouth.right, ex.mouth.mid);
-		ctx.lineWidth = 2.3 + (lips / 40);
+		da.drawPoints(ctx, ex.mouth.top, ex.mouth.left, ex.mouth.right, ex.mouth.top);
 	}
 	function drawNailPolish(ctx, ex, mods) {
-		var hips = this.hips;
-		var ass = this.ass;
-		var waist = this.waist;
-		var legs = this.legs;
-		var shoulders = this.shoulders;
-		var a = shoulders;
-		var b = a / 2;
-		var c = a / 3;
-		var d = a / 5;
-		var e = a / 10;
-		var f = a * 2;
-		var g = 0;
-		var x = 0;
-		var y = 0;
-		var z = 0;		
-		if (a < 11) {
-			// TODO for masculine hands...
-		}
-		else {
-			ctx.ellipse(ex.hand.tip.x+2,ex.hand.tip.y-5.5, 4,1, 3/5*Math.PI,  0,2*Math.PI);
-
-			var sp = da.splitQuadratic({p1:ex.thumb.in, p2:ex.thumb.out,
-				cp1:ex.thumb.out.cp1}, 0.78);
-
-			ctx.moveTo(ex.thumb.in.x, ex.thumb.in.y);
-			ctx.quadraticCurveTo((ex.thumb.in.x+sp.right.p1.x)/2, (ex.thumb.in.y+sp.right.p1.y)/2-0.5, 
-				sp.right.p1.x, sp.right.p1.y);
-			ctx.quadraticCurveTo(ex.thumb.in.x+4, ex.thumb.in.y+3, ex.thumb.in.x, ex.thumb.in.y);
-		}
+		da.drawNail(ctx, da.adjustPoint(ex.thumb.tip,0,1), 3, 4, -Math.PI*0.05);
+		da.drawNail(ctx, da.adjustPoint(ex.hand.tip,-4,-2), 3, 5, 0);
 	}
 	function draw(ctx, ex, mods) {
 		ctx.save();
 		// lips
-		ctx.strokeStyle = lipcolor;
+		ctx.fillStyle = lipcolor;
 		ctx.beginPath();
 		drawLipStick.call(this, ctx, ex, mods);
-		ctx.stroke();
+		ctx.fill();
 
 		ctx.restore();
 		ctx.save();

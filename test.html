@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
 <script src="da.js"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="test.css">
@@ -80,7 +79,6 @@ var PC = new da.Player({
 	face 		:6,
 	skin 		:7,
 
-	// physique and mods have to be overriden like this
 	Mods 		: {
 		// doesn't matter if the property names are wrapped in quotes or not
 		"amazon":0,
@@ -117,7 +115,7 @@ var PC = new da.Player({
 		"top":{2:"cashmere_turtleneck"},
 		"bot":{3:"blue_plaid_pencil_skirt"},
 		"shoes":{3:"classic_black_pumps"},
-		"acc":{"-1":"solid_black_hold_ups"},
+		"acc":{1:"solid_black_hold_ups", 0:"black_paint"},
 	},
 });
 
@@ -130,8 +128,8 @@ var canvas_holder = document.getElementById("testbody");
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
-	// width:900,
-	// height:1500,
+	width:900,
+	height:1500,
 });
 
 
@@ -187,18 +185,20 @@ function drawDrawPoints(ctx, ex) {
 function labelDrawPoint(ctx, pt) {
 	// display name to the nearest drawpoint to click point
 	var mindist = 1000;
-	var minp = null;
+	var minp = null, dx = 0, dy = 0;
 	for (var i = 0; i < dp.length; ++i) {
 		var dist = (pt.x - dp[i].x)*(pt.x - dp[i].x) + (pt.y - dp[i].y)*(pt.y - dp[i].y);
 		if (dist < mindist) {
 			mindist = dist;
 			minp = dp[i];
+			dx = da.roundToDec((pt.x - dp[i].x),1);
+			dy = da.roundToDec((pt.y - dp[i].y),1);
 		}
 	}
 	ctx.beginPath();
 	ctx.font = "6px consolas";
 	ctx.fillText(minp.name, minp.x, minp.y+3);
-	console.log(minp.name);
+	console.log(minp.name, dx, dy);
 	ctx.stroke();
 }
 
@@ -234,7 +234,7 @@ $(canvas).mousedown(function(e) {
 			}
 			case 2: {
 				// clear
-				da.drawfigure('player_avatar', PC);
+				da.drawfigure('player_avatar', PC, true);
 				break;
 			}
 			case 3: {
@@ -252,6 +252,7 @@ $(canvas).mousedown(function(e) {
 		ctx.beginPath();
 		ctx.strokeStyle = "black";
 		ctx.arc(pt.x, pt.y,1,0,Math.PI*2,true);
+		console.log(da.roundToDec(pt.x), da.roundToDec(pt.y));
 		ctx.stroke();
 		ctx.fill();
 	}
@@ -262,11 +263,21 @@ $(canvas).mousedown(function(e) {
 var chargen = $("#chargen");
 var holder = $('<div class="slider-holder" id="femalebias"></div>').appendTo(chargen);
 var orig = $('<div class="origstat">female bias</div>').appendTo(holder);
-var s = $('<div id="sliderfembias" class="slider"></div>').appendTo(holder).slider({value: 0,
-	min:-1,max:1, step:0.01,
-	slide:function(event, ui){
-		$("#curfembias").text(Math.round(ui.value*100)/100);
-}});
+var s = document.createElement("input");
+holder.append(s);
+s.setAttribute("type", "range");
+s.setAttribute("class", "slider");
+s.setAttribute("id", "sliderfembias");
+s.max = -1;
+s.min = 1;
+s.step = 0.01;
+s.value = 0;
+s.addEventListener("input", function(e){
+	var v = parseInt(this.value);
+	$("#curfembias").text(da.roundToDec(v,2));
+}, false);
+
+
 var cur = $(['<div class="curstat" id="curfembias">',0,'</div>'].join("")).appendTo(holder);
 // print stats of character so you can recreate it
 Object.defineProperty(JSON, "reviveWrapper", {
@@ -282,22 +293,25 @@ Object.defineProperty(JSON, "reviveWrapper", {
 });
 
 function showCurPhysique() {
-	for (var p in PC.physique) {
+	for (var p in da.Player.physiqueLimits) {
 		$("#cur"+p).text(Math.round(PC.physique[p]*10)/10);
-		$("#slider"+p).slider("option","value",PC.physique[p]);
+		var slider = document.getElementById("slider"+p);
+		slider.value = PC.physique[p];
 	}
 }
 function showCurMods() {
-	for (var p in PC.Mods) {
+	for (var p in da.Player.modLimits) {
 		$("#cur"+p+"mod").text(Math.round(PC.Mods[p]*10)/10);
-		$("#slider"+p+"mod").slider("option","value",PC.Mods[p]);		
+		var slider = document.getElementById("slider"+p+"mod");
+		slider.value = PC.Mods[p];
 	}
 }
 function showCurStats() {
 	for (var p in da.Player.statLimits) {
 		console.log(p);
 		$("#cur"+p+"stat").text(Math.round(PC[p]*10)/10);
-		$("#slider"+p+"stat").slider("option","value",PC[p]);
+		var slider = document.getElementById("slider"+p+"stat");
+		slider.value = PC[p];
 	}
 }
 
@@ -311,7 +325,7 @@ function getSortedKeys(obj) {
 }
 function redrawPage(PC) {
 
-	ex = da.drawfigure('player_avatar', PC);
+	ex = da.drawfigure('player_avatar', PC, true);
 	drawDrawPoints(ex.ctx, ex);
 	// create sliders for each physique
 	var sliderH = $("#slidersP");
@@ -322,14 +336,25 @@ function redrawPage(PC) {
 		var p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + '"></div>').appendTo(sliderH);
 		var orig = $(['<div class="origstat">',p,' ',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
-		var s = $('<div id="slider'+p+'" class="slider"></div>').appendTo(holder).slider({value: PC.physique[p],min:da.Player.physiqueLimits[p].low,max:da.Player.physiqueLimits[p].high,
-			slide:function(p, event, ui){
-				PC.physique[p]=ui.value; 
-				$("#cur"+p).text(Math.round(PC.physique[p]*10)/10);
-				ex = da.drawfigure('player_avatar', PC, true);
-				drawDrawPoints(ex.ctx, ex);
-		}.bind(null, p)});
-		var cur = $(['<div class="curstat" id="cur',p,'">',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
+
+		var s = document.createElement("input");
+		holder.append(s);
+		s.setAttribute("type", "range");
+		s.setAttribute("class", "slider");
+		s.setAttribute("id", "slider"+p);
+
+		s.max = (da.Player.physiqueLimits[p].high < 1e8)? da.Player.physiqueLimits[p].high : 100;
+		s.min = (da.Player.physiqueLimits[p].low > -1e8)? da.Player.physiqueLimits[p].low : -10;
+		s.value = PC.physique[p];
+		s.addEventListener("input", function(p, e){
+			var v = parseInt(this.value);
+			PC.physique[p] = v;
+			$("#cur"+p).text(da.roundToDec(PC.physique[p]));
+			ex = da.drawfigure('player_avatar', PC, true);
+			drawDrawPoints(ex.ctx, ex);
+		}.bind(s, p), false);
+
+		var cur = $(['<div class="curstat" id="cur',p,'">',da.roundToDec(PC.physique[p],1),'</div>'].join("")).appendTo(holder);
 	}
 
 	// create sliders for each stat
@@ -341,14 +366,24 @@ function redrawPage(PC) {
 		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'stat"></div>').appendTo(sliderS);
 		var orig = $(['<div class="origstat">',p,' ',PC[p],'</div>'].join("")).appendTo(holder);
-		var s = $('<div id="slider'+p+'stat" class="slider"></div>').appendTo(holder).slider({value: PC[p],min:da.Player.statLimits[p].low, max:da.Player.statLimits[p].high,
-			slide:function(p, event, ui){
-				PC[p]=ui.value; 
-				$("#cur"+p+"stat").text(PC[p]);
-				ex = da.drawfigure('player_avatar', PC);
-				drawDrawPoints(ex.ctx, ex);
-				showCurPhysique();
-		}.bind(null, p)});
+
+		var s = document.createElement("input");
+		holder.append(s);
+		s.setAttribute("type", "range");
+		s.setAttribute("class", "slider");
+		s.setAttribute("id", "slider"+p+"stat");
+		s.max = (da.Player.statLimits[p].high < 1e8)? da.Player.statLimits[p].high : 100;
+		s.min = (da.Player.statLimits[p].low > -1e8)? da.Player.statLimits[p].low : -10;
+		s.value = PC[p];
+		s.addEventListener("input", function(p, e){
+			var v = parseInt(this.value);
+			PC[p] = v;
+			$("#cur"+p+"stat").text(da.roundToDec(PC[p]));
+			ex = da.drawfigure('player_avatar', PC);
+			drawDrawPoints(ex.ctx, ex);
+			showCurPhysique();
+		}.bind(s, p), false);
+
 		var cur = $(['<div class="curstat" id="cur',p,'stat">',PC[p],'</div>'].join("")).appendTo(holder);
 	}
 
@@ -361,19 +396,27 @@ function redrawPage(PC) {
 		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'mod"></div>').appendTo(sliderM);
 		var orig = $(['<div class="origstat">',p,' ',PC.Mods[p],'</div>'].join("")).appendTo(holder);
+
+		var s = document.createElement("input");
+		holder.append(s);
+		s.setAttribute("type", "range");
+		s.setAttribute("class", "slider");
+		s.setAttribute("id", "slider"+p+"mod");
 		// if there is a valid min, use it, otherwise use -10
-		var min = (da.Player.modLimits[p].low > -1e8)? da.Player.modLimits[p].low : -10;
-		var max = (da.Player.modLimits[p].high < 1e8)? da.Player.modLimits[p].high : 10;
-		var s = $('<div id="slider'+p+'mod" class="slider"></div>').appendTo(holder).slider({value: PC.Mods[p],min:min, max:max,
-			slide:function(p, event, ui){
-				PC.Mods[p]=ui.value; 
-				$("#cur"+p+"mod").text(PC.Mods[p]);
-				// if it's standalone modifer, don't need to recalculate stats
-				var standaloneMod = !(PC.physique.hasOwnProperty(p) || PC.hasOwnProperty(p));
-				ex = da.drawfigure('player_avatar', PC, standaloneMod);
-				drawDrawPoints(ex.ctx, ex);
-				showCurPhysique();
-		}.bind(null, p)});
+		s.max = (da.Player.modLimits[p].high < 1e8)? da.Player.modLimits[p].high : 10;
+		s.min = (da.Player.modLimits[p].low > -1e8)? da.Player.modLimits[p].low : -10;
+		s.value = PC.Mods[p];
+		s.addEventListener("input", function(p, e){
+			var v = parseInt(this.value);
+			PC.Mods[p] = v;
+			$("#cur"+p+"mod").text(da.roundToDec(PC.Mods[p]));
+			var standaloneMod = !(PC.physique.hasOwnProperty(p) || PC.hasOwnProperty(p));
+			if (standaloneMod) console.log(p,"is standalone mod");
+			ex = da.drawfigure('player_avatar', PC, standaloneMod);
+			drawDrawPoints(ex.ctx, ex);
+			showCurPhysique();
+		}.bind(s, p), false);
+
 		var cur = $(['<div class="curstat" id="cur',p,'mod">',PC.Mods[p],'</div>'].join("")).appendTo(holder);
 	}
 		

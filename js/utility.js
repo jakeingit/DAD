@@ -37,10 +37,69 @@ da.extractRGB = function(rgbString) {
 		return {r:parseInt(rgb[1]), g:parseInt(rgb[2]), b:parseInt(rgb[3])};
 	}
 	return null;
-}
+};
 
 da.clamp = function(num, min, max) {
   return num < min ? min : num > max ? max : num;
+};
+
+da.roundToDec = function(num, numDecimals) {
+  numDecimals = numDecimals || 1;
+  return Math.round(num*Math.pow(10,numDecimals))/Math.pow(10,numDecimals);
+};
+
+da.RLE = function(s) {
+  // simple run length encoding for images (4 characters at a time)
+  var shortests = String.fromCharCode(0)+s;
+
+  // try encoding multiples of 4 (repetitions could be at different intervals)
+  // try subpixel encoding first ()
+  for (var j = 1; j < 41;) {
+    // first character to indicate how many pixels is a pattern
+    var ss = String.fromCharCode(j);
+    var c = s.slice(0,j);
+    var repeat = 1;
+
+    var i = j;
+    for (var len = s.length; i < len; i+=j) {
+      // base64 can only handle up to 255
+      if (c !== s.slice(i,i+j) || repeat === 255) {
+        ss += String.fromCharCode(repeat)+c;
+        repeat = 1;
+        c = s.slice(i,i+j);
+      }
+      else {
+        ++repeat;
+      }
+    }
+    // was still repeating a sequence at the end
+    if (c === s.slice(s.length-j))
+      ss += String.fromCharCode(repeat)+c;
+    // copy over the end (number of total pixels doesn't divide 4*stride evenly)
+    else if (i > s.length-1)
+      ss += String.fromCharCode(1)+s.slice(i-j);
+
+    console.log("RLE over",j,"stride -- compressed",ss.length, "original", s.length);
+    if (ss.length < shortests.length) shortests = ss;
+    // after subpixel encoding, increment by a pixel
+    if (j === 1) j = 4;
+    else j += 4;
+  }
+  // actually smaller to keep original string
+  return shortests;
+}
+
+da.RLD = function(ss) {
+  // simple run length decoding
+  var stride = ss.charCodeAt(0);
+  if (stride === 0) return ss.slice(1);
+
+  var s = "";
+  for (var i = 1, len = ss.length; i < len; i += 1+stride) {
+    s += ss.slice(i+1,i+1+stride).repeat(ss.charCodeAt(i));
+  }
+  console.log("decoded length",s.length);
+  return s;
 }
 
 // zigurat algorithm, from https://www.filosophy.org/post/35/normaldistributed_random_values_in_javascript_using_the_ziggurat_algorithm/
