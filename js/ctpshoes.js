@@ -338,6 +338,7 @@ da.ctp.shoes.details.drawHeelStrap = function(stroke) {
 	}
 	return draw;
 }
+
 // heel detail decorators (window on the left)
 da.ctp.shoes.sideDetails.drawHeelStrapDetails = function(stroke) {
 	function draw(ctx, ex, mods) {

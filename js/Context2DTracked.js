@@ -96,8 +96,8 @@
 			this.movePen(x,y);
 			target.moveTo(x,y);
 		}
-		this.lineTo = function(x,y, showcontrol, r) {
-			if (showcontrol || this.showcontrol) {
+		this.lineTo = function(x,y, r) {
+			if (r || this.showcontrol) {
 				if (isNaN(r)) r = 2;
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},
@@ -111,8 +111,8 @@
 			this.movePen(x,y);
 		}
 
-		this.bezierCurveTo = function(cpx1,cpy1,cpx2,cpy2,x,y, showcontrol, r) {
-			if (showcontrol || this.showcontrol) {
+		this.bezierCurveTo = function(cpx1,cpy1,cpx2,cpy2,x,y, r) {
+			if (r || this.showcontrol) {
 				if (isNaN(r)) r = 2;	// radius of points to draw with
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},
@@ -128,8 +128,8 @@
 			target.bezierCurveTo(cpx1,cpy1,cpx2,cpy2,x,y);
 			this.movePen(x,y);
 		}
-		this.quadraticCurveTo = function(cpx, cpy, x, y, showcontrol, r) {
-			if (showcontrol || this.showcontrol) {
+		this.quadraticCurveTo = function(cpx, cpy, x, y, r) {
+			if (r || this.showcontrol) {
 				if (isNaN(r)) r = 2;
 				this.drawCurveControl({
 					p1: {x:this.penx, y:this.peny},

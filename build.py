@@ -7,33 +7,59 @@ from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
 from watchdog.events import FileSystemEventHandler
 import os
+import time
 
+license = """/* Copyright 2012 Tuatha, 2016 penumbra
+   Originally created by Tuatha, totally overhauled by Penumbra
+   Feel free to include this into your game, 
+   just remember to credit and leave the license in place.
+
+   To use, just copy the entire content of this file to the top of your Javascript.
+*/"""
 
 class ModuleChangeEventHandler(FileSystemEventHandler):
 	def __init__(self, params):
 		self.params = params
+		self.lastcomp = 0
 
 	def on_modified(self, event):
 		print(event)
+		if time.time() < self.lastcomp + 5:
+			print("skipping duplicate event")
+			return
+		else:
+			self.lastcomp = time.time()
 
 		p = self.params
 
-		# depending on compilation option here
-		if p.compile in ["jsmin", "none"]:
-			with open(p.dest, "w") as of:
-				for srcfile in p.source:
-					with open(p.path + srcfile, "r") as src:
-						if p.compile == "jsmin":
-							of.write(jsmin(src.read()))	
-						else:
-							of.write(src.read())
+		# always manually concat first to ensure loading order
+		with open(p.dest, "w") as of:
+			for srcfile in p.source:
+				with open(p.path + srcfile, "r") as src:
+					if p.compile == "jsmin":
+						of.write(jsmin(src.read()))	
+					else:
+						of.write(src.read())
 
 		# advanced compilation is too aggressive and kills the properties I want to export
-		elif p.compile == "closure":
+		if p.compile == "closure":
+			try:
+				os.remove("temptemptemp.js")
+			except OSError:
+				pass
 			sp.run(["closure_compiler.bat", "--compilation_level", "SIMPLE_OPTIMIZATIONS", "--js"] +
-				[p.path + src for src in p.source] + ["--js_output_file", "temptemptemp.js"])
-			os.remove(p.dest)
+				[p.dest] + ["--js_output_file", "temptemptemp.js"])
+			try:
+				os.remove(p.dest)
+			except OSError:
+				pass
 			os.rename("temptemptemp.js", p.dest)
+
+		# put license in at the top
+		with open(p.dest, 'r+') as f:
+			content = f.read()
+			f.seek(0,0)
+			f.write(license + '\n' + content)
 
 
 def parse_args(ns=None):
@@ -49,7 +75,7 @@ def parse_args(ns=None):
 	parser.add_argument("-s", "--source",
 		nargs="+",
 		default=["matrix.js", "Context2DTracked.js", "utility.js", "names.js",
-		 "drawfigure.js", "player.js", 
+		 "skeleton.js", "hair.js", "player.js", "drawfigure.js", 
 		 "patterns.js", "ctptop.js", "ctpbot.js", "ctpshoes.js", "ctpacc.js", "clothing.js"],
 		help="names of the JS source files in the order they should be added;\
 		default: %(default)s")

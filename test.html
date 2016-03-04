@@ -17,34 +17,33 @@
 		<div id="inventory"> </div>
 		<div id="chargen"><button id="randomizechar">Randomize Character</button></div>
 		<button class="action-button" id="toggledrawpoints">Toggle Drawpoints</button>
+		<button class="action-button" id="toggleskeletonpoints">Toggle Skeletonpoints</button>
 		<div id="imgtostr"><input type="file" id="imgupload" accept="image/*" style="display:none" onchange="processUploadedFiles(this.files)">
 			<button class="action-button" id="imguploadbtn">Make Custom Texture (drag and drop to canvas)<br>
 			(use small tilable images, like 10x10px)</button></div>
+		<button class="action-button" id="save">Save</button>
+		<button class="action-button" id="load">Load</button>
 		<!-- <button class="action-button" id="drawcurve">Start/Finish drawing</button> -->
 	</div>
 	<div id="slidersM" style="border:1px solid black;"></div>
 </div>
 
 <script>
+var sliderfembias = document.createElement("input");
 
 // EXAMPLE how to randomly create a character
 $("#randomizechar").click(function() {
 	// save what clothes we're wearing
 	var currentlyWorn = PC.worn;
 	// higher value creates more feminine characters in general
-	var fembias = $("#sliderfembias").slider("option","value");
-
+	var fembias = sliderfembias.value;
 	// make new character
 	PC = da.createRandomCharacter(fembias);
 	// don't do this in your code, actually wear the clothes with PC.changeClothes() unless you know what you're doing
 	PC.worn = currentlyWorn;
-	redrawPage(PC);
+	redrawPage(PC, true);
 });
-var drawdp = false;
-$("#toggledrawpoints").click(function() {
-	drawdp = !drawdp;
-	redrawPage(PC);
-});
+
 
 
 // EXAMPLE extending the default Player object
@@ -103,8 +102,9 @@ var PC = new da.Player({
 		"browc":5,
 	},
 	physique 	: {
-		"hairc":-5,
-		"hairstyle":4,
+		"hairc":13,
+		// "hairc":-5,
+		"hairstyle":3,
 		"height":6,
 		"hairlength":19,
 		"nipples":6.8,
@@ -128,7 +128,7 @@ var canvas_holder = document.getElementById("testbody");
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
-	width:900,
+	width:800,
 	height:1500,
 });
 
@@ -139,21 +139,41 @@ da.showCanvas("player_avatar");
 
 // EXAMPLE how to draw our character to that canvas
 var ex = da.drawfigure("player_avatar", PC);
-drawDrawPoints(ex.ctx, ex);
 
 
 
 
 // tester code (not a direct demonstration of API)
+var drawdp = false;
+$("#toggledrawpoints").click(function() {
+	drawdp = !drawdp;
+	if (drawdp) drawDrawPoints(ex.ctx, ex);
+	else {
+		dp.length = 0;
+		da.drawfigure("player_avatar", PC, true);
+		if (drawsk) drawSkeletonPoints(ex.ctx, PC);
+	}
+});
+var drawsk = false;
+$("#toggleskeletonpoints").click(function() {
+	drawsk = !drawsk;
+	if (drawsk) drawSkeletonPoints(ex.ctx, PC);
+	else {
+		sk.length = 0;
+		da.drawfigure("player_avatar", PC, true);
+		if (drawdp) drawDrawPoints(ex.ctx, ex);
+	}
+})
+
 /** get all draw points */
 function getDrawPoints(ex, levelToGo, prefix) {
 	if (typeof ex !== "object" || levelToGo < 1) return null;	// can't hold any draw points
 	var pts = [];
 	for (var name in ex) {
-		if (!ex.hasOwnProperty(name)) continue;
+		if (!ex.hasOwnProperty(name) || name === "cp1" || name === "cp2") continue;
 
 		var p = ex[name];
-		if (!p || typeof p !== "object" || name === "cp1" || name === "cp2") continue;
+		if (!p || typeof p !== "object") continue;
 		if (p.hasOwnProperty("x") && p.hasOwnProperty("y"))
 			pts.push(Object.assign({name:(prefix)? prefix+'.'+name : name},p));
 
@@ -166,26 +186,65 @@ function getDrawPoints(ex, levelToGo, prefix) {
 	}
 	return pts;
 }
+function getSkeletonPoints(ex, prefix) {
+	if (typeof ex !== "object") return null;	// can't hold any draw points
+	var pts = [];
+	for (var name in ex) {
+		if (!ex.hasOwnProperty(name) || name === "cp1" || name === "cp2") continue;
 
+		var p = ex[name];
+		if (typeof p === "number")
+			pts.push({name:(prefix)? prefix+'.'+name : name, x:79, y:p});
+		else if (p.hasOwnProperty("x") && p.hasOwnProperty("y"))
+			pts.push(Object.assign({name:(prefix)? prefix+'.'+name : name},p));
+		else {
+			var innerskpts = getSkeletonPoints(p, name);
+			if (innerskpts) {
+				pts.extend(innerdrawpts);
+			}
+		}
+		
+	}
+	return pts;
+}
+
+
+function drawExportedPoints(ctx, pts, labelColor) {
+	ctx.beginPath();
+	for (var i=0,len=pts.length; i < len; ++i) {
+		var p = pts[i];
+		ctx.moveTo(p.x, p.y);
+		ctx.arc(p.x, p.y, 0.5, 0, 2*Math.PI, true);
+	}
+	ctx.strokeStyle = labelColor;
+	ctx.stroke();
+}
 var dp = [];	// list of all draw points
 var adp = [];	// active draw points
 function drawDrawPoints(ctx, ex) {
 	if (!drawdp) return;
 	dp = getDrawPoints(ex, 4);
-	ctx.beginPath();
-	for (var i=0,len=dp.length; i < len; ++i) {
-		var p = dp[i];
-		ctx.moveTo(p.x, p.y);
-		ctx.arc(p.x, p.y, 0.5, 0, 2*Math.PI, true);
+	drawExportedPoints(ctx, dp, "black");
+}
+
+var sk = [];	// list of all skeleton points
+function drawSkeletonPoints(ctx, avatar) {
+	if (!drawsk) return;
+	var s = da.racialSkeleton[avatar.skeleton];
+	if (avatar.physique.shoulders < 11) {
+		sk = getSkeletonPoints(s.upper.m);
 	}
-	ctx.strokeStyle = "black";
-	ctx.stroke();
+	else {
+		sk = getSkeletonPoints(s.upper.f);
+	}
+	drawExportedPoints(ctx, sk, "blue");
 }
 
 function labelDrawPoint(ctx, pt) {
 	// display name to the nearest drawpoint to click point
 	var mindist = 1000;
 	var minp = null, dx = 0, dy = 0;
+	// check against all draw points
 	for (var i = 0; i < dp.length; ++i) {
 		var dist = (pt.x - dp[i].x)*(pt.x - dp[i].x) + (pt.y - dp[i].y)*(pt.y - dp[i].y);
 		if (dist < mindist) {
@@ -195,11 +254,23 @@ function labelDrawPoint(ctx, pt) {
 			dy = da.roundToDec((pt.y - dp[i].y),1);
 		}
 	}
-	ctx.beginPath();
-	ctx.font = "6px consolas";
-	ctx.fillText(minp.name, minp.x, minp.y+3);
-	console.log(minp.name, dx, dy);
-	ctx.stroke();
+	// check against all skeleton points
+	for (i = 0; i < sk.length; ++i) {
+		var dist = (pt.x - sk[i].x)*(pt.x - sk[i].x) + (pt.y - sk[i].y)*(pt.y - sk[i].y);
+		if (dist < mindist) {
+			mindist = dist;
+			minp = sk[i];
+			dx = da.roundToDec(pt.x - sk[i].x);
+			dy = da.roundToDec(pt.y - sk[i].y);
+		}		
+	}
+	if (minp) {
+		ctx.beginPath();
+		ctx.font = "6px consolas";
+		ctx.fillText(minp.name, minp.x, minp.y+3);
+		console.log(minp.name, dx, dy);
+		ctx.stroke();
+	}
 }
 
 canvas.oncontextmenu = function(e) {
@@ -226,7 +297,7 @@ $(canvas).mousedown(function(e) {
 
 
 
-	if (drawdp) {	
+	if (drawdp || drawsk) {	
 		switch(e.which) {
 
 			case 1: {
@@ -245,6 +316,7 @@ $(canvas).mousedown(function(e) {
 
 		ctx.strokeStyle = "black";
 		drawDrawPoints(ctx, ex);
+		drawSkeletonPoints(ctx, PC);
 		labelDrawPoint(ctx, pt);
 
 	}
@@ -263,17 +335,16 @@ $(canvas).mousedown(function(e) {
 var chargen = $("#chargen");
 var holder = $('<div class="slider-holder" id="femalebias"></div>').appendTo(chargen);
 var orig = $('<div class="origstat">female bias</div>').appendTo(holder);
-var s = document.createElement("input");
-holder.append(s);
-s.setAttribute("type", "range");
-s.setAttribute("class", "slider");
-s.setAttribute("id", "sliderfembias");
-s.max = -1;
-s.min = 1;
-s.step = 0.01;
-s.value = 0;
-s.addEventListener("input", function(e){
-	var v = parseInt(this.value);
+holder.append(sliderfembias);
+sliderfembias.setAttribute("type", "range");
+sliderfembias.setAttribute("class", "slider");
+sliderfembias.setAttribute("id", "sliderfembias");
+sliderfembias.max = 1;
+sliderfembias.min = -1;
+sliderfembias.step = 0.01;
+sliderfembias.value = 0;
+sliderfembias.addEventListener("input", function(e){
+	var v = parseFloat(this.value);
 	$("#curfembias").text(da.roundToDec(v,2));
 }, false);
 
@@ -323,10 +394,11 @@ function getSortedKeys(obj) {
 	keys.sort();
 	return keys;
 }
-function redrawPage(PC) {
+function redrawPage(PC, calcPhysique) {
 
-	ex = da.drawfigure('player_avatar', PC, true);
+	ex = da.drawfigure('player_avatar', PC, !calcPhysique);
 	drawDrawPoints(ex.ctx, ex);
+	drawSkeletonPoints(ex.ctx, PC);
 	// create sliders for each physique
 	var sliderH = $("#slidersP");
 	sliderH.empty();
@@ -352,6 +424,7 @@ function redrawPage(PC) {
 			$("#cur"+p).text(da.roundToDec(PC.physique[p]));
 			ex = da.drawfigure('player_avatar', PC, true);
 			drawDrawPoints(ex.ctx, ex);
+			drawSkeletonPoints(ex.ctx, PC);
 		}.bind(s, p), false);
 
 		var cur = $(['<div class="curstat" id="cur',p,'">',da.roundToDec(PC.physique[p],1),'</div>'].join("")).appendTo(holder);
@@ -381,6 +454,7 @@ function redrawPage(PC) {
 			$("#cur"+p+"stat").text(da.roundToDec(PC[p]));
 			ex = da.drawfigure('player_avatar', PC);
 			drawDrawPoints(ex.ctx, ex);
+			drawSkeletonPoints(ex.ctx, PC);
 			showCurPhysique();
 		}.bind(s, p), false);
 
@@ -414,18 +488,66 @@ function redrawPage(PC) {
 			if (standaloneMod) console.log(p,"is standalone mod");
 			ex = da.drawfigure('player_avatar', PC, standaloneMod);
 			drawDrawPoints(ex.ctx, ex);
+			drawSkeletonPoints(ex.ctx, PC);
 			showCurPhysique();
 		}.bind(s, p), false);
 
 		var cur = $(['<div class="curstat" id="cur',p,'mod">',PC.Mods[p],'</div>'].join("")).appendTo(holder);
 	}
 		
+
+	var inv = $("#inventory");
+	// only show drawable clothes
+	for (var c in da.clothes) {
+		var hasDrawMethod = false;
+		var cc = da.clothes[c];
+		for (var p in da.clothes[c]) {
+			if (cc.hasOwnProperty(p) && p.startsWith("draw")) {
+				hasDrawMethod = true;
+				break;
+			}
+		}
+		if (hasDrawMethod) {
+			var ctag = $('<div class="clothes-holder" id="' + c + '"</div>').appendTo(inv);
+			ctag.text(c);
+			if (PC.isWearing(c)) {
+				ctag.addClass("wearing");
+			}
+
+			ctag.click(function(e, ctag, c) {
+				var changedOut = PC.changeClothes(c); 
+				ctag.toggleClass("wearing");
+				if (changedOut && changedOut !== c) 
+					$("#"+changedOut).toggleClass("wearing");
+				var cc = da.clothes[c];
+
+				ex = da.drawfigure('player_avatar', PC);
+				drawDrawPoints(ex.ctx, ex);
+				drawSkeletonPoints(ex.ctx, PC);
+				showCurPhysique();
+				showCurMods();
+			}.bind(null, null, ctag, c));
+		}
+	}
+		
 	
 	$("#createchar").click(function() {
-	var PCserialized = eval(JSON.stringify(PC))[1];
-	// eval PCserialized to revive PC
-	window.prompt("Copy to clipboard: Ctrl+C, Enter", PCserialized);
-});
+		var PCserialized = eval(JSON.stringify(PC))[1];
+		// eval PCserialized to revive PC
+		window.prompt("Copy to clipboard: Ctrl+C, Enter", PCserialized);
+	});
+	$("#save").click(function(){
+		localStorage.setItem('DADsavedChar', eval(JSON.stringify(PC))[1]);
+		console.log("saved",eval(JSON.stringify(PC))[1]);
+	});
+	$("#load").click(function(){
+		var PCserialized = localStorage.getItem('DADsavedChar');
+		if (PCserialized) {
+			PC = eval(PCserialized);
+			redrawPage(PC, true);
+			console.log("loaded",PC);
+		}
+	});
 
 }
 
@@ -477,39 +599,6 @@ $(document).ready(function() {
 	// add a pattern
 	da.preloadPattern({name:"checkered", reptition:"repeat", format:"png", dataurl:"iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjE3NDQ1MDdCREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjE3NDQ1MDdDREI4QjExRTU4ODU1RURBNEJFMDk2MEFFIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTc0NDUwNzlEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MTc0NDUwN0FEQjhCMTFFNTg4NTVFREE0QkUwOTYwQUUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz79WpsFAAAAJElEQVR42mL8//8/AxJgZGRE5jIx4AU0lWZE46O5dCCdBhBgAEU3BhAw4WsWAAAAAElFTkSuQmCC"});
 
-
-	var inv = $("#inventory");
-	// only show drawable clothes
-	for (var c in da.clothes) {
-		var hasDrawMethod = false;
-		var cc = da.clothes[c];
-		for (var p in da.clothes[c]) {
-			if (cc.hasOwnProperty(p) && p.startsWith("draw")) {
-				hasDrawMethod = true;
-				break;
-			}
-		}
-		if (hasDrawMethod) {
-			var ctag = $('<div class="clothes-holder" id="' + c + '"</div>').appendTo(inv);
-			ctag.text(c);
-			if (PC.isWearing(c)) {
-				ctag.addClass("wearing");
-			}
-
-			ctag.click(function(e, ctag, c) {
-				var changedOut = PC.changeClothes(c); 
-				ctag.toggleClass("wearing");
-				if (changedOut && changedOut !== c) 
-					$("#"+changedOut).toggleClass("wearing");
-				var cc = da.clothes[c];
-
-				ex = da.drawfigure('player_avatar', PC);
-				drawDrawPoints(ex.ctx, ex);
-				showCurPhysique();
-				showCurMods();
-			}.bind(null, null, ctag, c));
-		}
-	}
 
 	redrawPage(PC);
 });

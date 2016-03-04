@@ -9,7 +9,7 @@ da.ctp.bot.drawTightPants = function(stroke, fill) {
 		ctx.quadraticCurveTo(ex.pelvis.cp3.x, ex.pelvis.cp3.y, ex.hip.x, ex.hip.y);
 		// from center of waist to side
 
-		da.drawPoints(ctx, null, ex.kneepit, ex.calf.out, ex.ankle.outtop, da.adjustPoint(ex.ankle.out,0,-3));
+		da.drawPoints(ctx, null, ex.thigh.out, ex.kneepit, ex.calf.out, ex.ankle.outtop, da.adjustPoint(ex.ankle.out,0,-3));
 		ctx.quadraticCurveTo(ex.ankle.intop.x*0.5+ex.ankle.out.x*0.5, ex.ankle.out.y+2,
 				ex.ankle.intop.x, ex.ankle.intop.y-3);
 
@@ -33,8 +33,8 @@ da.ctp.bot.drawPencilSkirt = function(stroke, fill) {
 			sp.right.p2.x, sp.right.p2.y);
 
 		// goes down to cover the knee
-		ctx.quadraticCurveTo(ex.kneepit.cp1.x, ex.kneepit.cp1.y,
-			ex.kneepit.x, ex.kneepit.y);
+		da.drawPoints(ctx, null, ex.thigh.out, ex.kneepit);
+
 		// close up to the middle
 		ctx.bezierCurveTo(ex.kneepit.x+5,ex.kneepit.y+4,
 			79-3, ex.kneepit.y+4,

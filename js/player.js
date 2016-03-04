@@ -34,13 +34,14 @@ var statLimits = {	// core stats, each with low, high, average, and stdev (assum
 };
 var statDiscretePool = { 	// pool of available values for discrete properties
 	gender  : 	["female", "male", "futa"],
+	skeleton: 	["human"],	// underlying racial structure of player
 };
 
 
 
 var physiqueLimits = {
 	hairc: 		{low:-5,high:120,avg:10,stdev:12},	// jet black to platinum blonde (40) to silver white (100) to pure white (~200)
-	hairstyle: 	{low:0,high:11,avg:4,stdev:3},					// bald (0) to parted at middle hair style (not 0)
+	hairstyle: 	{low:0,high:da.drawHairFront.length-1,avg:1,stdev:1},		// bald (0) to parted at middle hair style (1)
 	height: 	{low:-10,high:25,avg:6,stdev:3},		// 4'5" (-10) to 5'7" (10) to 6'6" (25) (need some canvas teweaking?)
 	irisc: 		{low:-20,high:100,avg:5,stdev:20},	// red (~-20) to brown (0) to green (10) to blue (20) to purple (40)
 	skin: 		{low:-20,high:50,avg:10,stdev:30},	// translucent (-20) to porcelein (-10) to fair (-5) to tanned (5) to brown (15) pure black (50)
@@ -57,31 +58,12 @@ var physiqueLimits = {
 	penis: 		{low:-10,high:20,avg:0,stdev:4},		// footlong (-10) to nothing there (20)
 	waist: 		{low:-20,high:35,avg:8,stdev:8},		// pregnant (-20) to flat (0) to toned (5) to narrow (10) to pinched (30)
 	hips: 		{low:-10,high:50,avg:0,stdev:7},		// narrow (-10) to normal (0) to wide (15) to fertility goddess (30)
-	ass: 		{low:-10,high:40,avg:10,stdev:10},	// nonexistent (-10) to normal (10) to titanic (40)			
+	butt: 		{low:-10,high:40,avg:10,stdev:10},	// nonexistent (-10) to normal (10) to titanic (40)			
 	legs: 		{low:-5,high:55,avg:15,stdev:10},	// leg day (-5) to boyish (10) to neutral (15) to lithe (20) to curvy (30) to gigantic thighs (50)
 };
 // use objects as unordered sets (mapped value is dummy, just true here)
 var physiqueAllowed = {
-	hairc: 		{},
-	hairstyle: 	{},
-	height: 	{},
-	irisc: 		{},
 	skin: 		{100:true,101:true,102:true},
-	breastrows: {},
-	gentialscnt:{},
-	face: 		{},
-	eyes: 		{},
-	lips: 		{},
-	hairlength: {},
-	shoulders: 	{},
-	breasts: 	{},
-	nipples: 	{},
-	testes: 	{},
-	penis: 		{},
-	waist: 		{},
-	hips: 		{},
-	ass: 		{},
-	legs: 		{},
 };
 // first element of discrete pools is the default
 var physiqueDiscretePool = {
@@ -105,7 +87,7 @@ var modLimits = {
 	fem: 		{low:-1e9,high:1e9,avg:0,stdev:1},
 	sub: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	waist: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// positive is narrower
-	ass: 		{low:-1e9,high:1e9,avg:0,stdev:2},
+	butt: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	legl: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// how long their legs are (proportion of body that is legs) 
 	eyec: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// eye curl (positive produces / slant, negative \ slant)
 	noseskew: 	{low:-1e9,high:1e9,avg:0,stdev:2},		// positive means nose starts on the right
@@ -198,7 +180,7 @@ function getDefault(limits, discretePool) {
 	return run;
 }
 // used to generate default values
-var defaultStats = da.defaultStats = getDefault(statLimits);
+var defaultStats = da.defaultStats = getDefault(statLimits, statDiscretePool);
 var defaultPhysique = da.defaultPhysique = getDefault(physiqueLimits, physiqueDiscretePool);
 var defaultMods = da.defaultMods = getDefault(modLimits, modDiscretePool);
 var defaultWorn = da.defaultWorn = {	
@@ -259,6 +241,7 @@ Player.physiqueLimits = physiqueLimits;
 Player.physiqueAllowed = physiqueAllowed;
 Player.statDiscretePool = statDiscretePool;
 Player.femBias = femBias;
+
 
 
 // ---- player drawing functions ----
@@ -362,7 +345,7 @@ Player.prototype.clampStats = function() {
 Player.prototype.clampPhysique = function() {
 	for (var p in physiqueLimits) {
 		// this property is limited and the value is not explicitely allowed
-		if (!isNaN(this.physique[p]) && !Player.physiqueAllowed[p].hasOwnProperty(this.physique[p])) {
+		if (!isNaN(this.physique[p]) && !(Player.physiqueAllowed[p] && Player.physiqueAllowed[p].hasOwnProperty(this.physique[p]))) {
 			this.physique[p] = da.clamp(this.physique[p], Player.physiqueLimits[p].low, Player.physiqueLimits[p].high);
 		}
 	}
@@ -440,8 +423,8 @@ Player.prototype.calcWaist = function() {
 Player.prototype.calcHips = function() {
 	return (this.getFem() + this.hips)*1.2 - 2 + this.Mods.hips;
 };
-Player.prototype.calcAss = function() {
-	return this.getFem() + this.Mods.ass + this.butt + this.Mods.butt;
+Player.prototype.calcButt = function() {
+	return this.getFem() + this.butt + this.Mods.butt;
 };
 Player.prototype.calcLegs = function() {
 	return this.getFem()*1.5 + this.getSub()*2 - this.str + this.Mods.legs;
@@ -461,7 +444,7 @@ Player.prototype.calcPhysique = function() {
     this.physique.penis = this.calcPenis();
     this.physique.waist = this.calcWaist();
     this.physique.hips = this.calcHips();
-    this.physique.ass = this.calcAss();
+    this.physique.butt = this.calcButt();
     this.physique.legs = this.calcLegs();
     this.clampPhysique();
 };
