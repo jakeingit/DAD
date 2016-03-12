@@ -17,7 +17,7 @@ var drawPoints = da.drawPoints = function(ctx) {
 	// does not begin a path or fill or stroke (just moves pen between the points)
 	if (arguments.length < 2) return;	// not enough points to draw
 	var startPoint = arguments[1];	// first argument is ctx
-	// if null is pbutted through, just continue from last location
+	// if null is passed through, just continue from last location
 	if (startPoint) {
 		ctx.moveTo(startPoint.x, startPoint.y);
 	}
@@ -30,10 +30,10 @@ var drawPoints = da.drawPoints = function(ctx) {
 			continue;
 		}
 		if (p.hasOwnProperty("cp2")) {
-			ctx.bezierCurveTo(p.cp1.x, p.cp1.y, p.cp2.x, p.cp2.y, p.x, p.y, p.trace, p.traceSize);
+			ctx.bezierCurveTo(p.cp1.x, p.cp1.y, p.cp2.x, p.cp2.y, p.x, p.y, p.traceSize);
 		}
 		else if (p.hasOwnProperty("cp1")) {
-			ctx.quadraticCurveTo(p.cp1.x, p.cp1.y, p.x, p.y, p.trace, p.traceSize);
+			ctx.quadraticCurveTo(p.cp1.x, p.cp1.y, p.x, p.y, p.traceSize);
 		}
 		else {
 			ctx.lineTo(p.x, p.y);
@@ -43,7 +43,7 @@ var drawPoints = da.drawPoints = function(ctx) {
 
 var tracePoint = da.tracePoint = function(point, radius) {
 	// add a trace to a drawpoint when giving to da.drawPoints function
-	return Object.assign({trace:true,traceSize:radius},point);
+	return Object.assign({traceSize:radius},point);
 };
 
 da.averageQuadratic = function(ctx, p1, p2, t, dx, dy, st, et) {
@@ -82,6 +82,10 @@ da.getCanvas = function(canvasName, styleOverride) {
 			parent: document.getElementById("canvas_holder"),
 		}
 	*/
+	// if given a canvas object, just return it
+	if (typeof canvasName !== "string")
+		return canvasName;
+
 	var styles = Object.assign({
 		width:"500",
 		height:"800",
@@ -143,8 +147,9 @@ da.drawNail = function(ctx, pt, w, h, rot) {
 };
 
 // anything defined on da (the module) is exported
-da.drawfigure = function(canvasname, avatar, pbuttThrough) {
+da.drawfigure = function(canvasname, avatar, passThrough) {
 	// canvas name is the string id of the canvas element to draw to
+	// if it's not a string, we assume it's the actual canvas passed in
 
 	function drawGenitals(ctx)
 	{
@@ -1055,13 +1060,11 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 		// left to right
 
 
-		if (lips < -10 || lipt < -3 || (lipw > lips*1.5)) {	// very thin lips
+		if (lips < -10 || lipt < -5 || (lipw > lips*1.5)) {	// very thin lips
 			ex.mouth.mid = {x:79+lipw*0.1, y:50+liph*0.1 + lipc*0.1};
 			ex.mouth.left = {x:76 - d -lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
 			// center to left
 			ex.mouth.right = {x:82 + d+lipw*0.1, y:ex.mouth.mid.y - (y + (e / 2))};
-
-
 
 			ctx.moveTo(ex.mouth.left.x, ex.mouth.left.y);
 
@@ -1078,11 +1081,11 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 			ctx.stroke();
 		}
 		else {
-			ex.mouth.left.cp1 = {x:77 +lips*0.01, y:ex.mouth.mid.y - lips*0.1 -lipt*0.1 -lipc*0.2};
+			ex.mouth.left.cp1 = {x:77 +lips*0.01 -lipc*0.1, y:ex.mouth.mid.y - lips*0.1 -lipt*0.1 -lipc*0.2 -lipa*0.2};
 			ex.mouth.right.cp1 = {x:77, y:ex.mouth.mid.y + 3.1 + lips*0.07 +lipt*0.1 -lipc*0.1};
 			ex.mouth.right.cp2 = {x:81, y:ex.mouth.right.cp1.y};
 
-			ex.mouth.top.cp1 = {x:81 -lips*0.01, y:ex.mouth.left.cp1.y}; // positive curl moves it down into :(
+			ex.mouth.top.cp1 = {x:2*79 -ex.mouth.left.cp1.x, y:ex.mouth.left.cp1.y}; // positive curl moves it down into :(
 
 			var sp = da.splitCurve(ex.mouth.left, ex.mouth.right, 0.5);
 			ex.mouth.bot = sp.left.p2;
@@ -1693,7 +1696,11 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 	
 
 	// start of main function (above are all helper definitions)
-	var canvas = document.getElementById(canvasname);
+	var canvas = null;
+	if (typeof canvasname === "string")
+		canvas = document.getElementById(canvasname);
+	else
+		canvas = canvasname;	// assume canvas element passed in
 
 	// can't find canvas
 	if (typeof canvas === 'undefined') {
@@ -1703,7 +1710,7 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 
 	// define stats
 	var missingData = false;
-	if (!pbuttThrough)
+	if (!passThrough)
 		avatar.calcPhysique();
 	var sk = da.racialSkeleton[avatar.skeleton];
 	if (!sk) {
@@ -1738,6 +1745,7 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 	var lipt = typeof id["lipt"] !== 'undefined' ? id["lipt"] : missingData = true;
 	var liph = typeof id["liph"] !== 'undefined' ? id["liph"] : missingData = true;
 	var lipc = typeof id["lipc"] !== 'undefined' ? id["lipc"] : missingData = true;
+	var lipa = typeof id["lipa"] !== 'undefined' ? id["lipa"] : missingData = true;
 	var legl = typeof id["legl"] !== 'undefined' ? id["legl"] : missingData = true;
 	var eyec = typeof id["eyec"] !== 'undefined' ? id["eyec"] : missingData = true;
 	var noseskew = typeof id["noseskew"] !== 'undefined' ? id["noseskew"] : missingData = true;
@@ -2028,3 +2036,5 @@ da.drawfigure = function(canvasname, avatar, pbuttThrough) {
 
 return da;
 }(da || {}));
+
+window.da = da;

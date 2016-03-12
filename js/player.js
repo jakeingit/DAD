@@ -25,12 +25,6 @@ var statLimits = {	// core stats, each with low, high, average, and stdev (assum
 
 	// vitals
 	arousal : {low:0, high:11, avg:4, stdev:2},	
-
-	// statistics
-	vag_used: {low:-1, high:10, avg:3, stdev:2},	// -1 indicates magic enhancements, higher number reflects higher usage
-	ass_used: {low:-1, high:10, avg:1, stdev:3},
-	vag_sex	: {low:0, high:1e9, avg:4, stdev:8},	// # times used; optimistic?
-	ass_sex	: {low:0, high:1e9, avg:0, stdev:4},	
 };
 var statDiscretePool = { 	// pool of available values for discrete properties
 	gender  : 	["female", "male", "futa"],
@@ -80,10 +74,11 @@ var modLimits = {
 	testes: 	{low:-1e9,high:1e9,avg:-1,stdev:1, bias:-4},	// same here as well
 	eyes: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	lips: 		{low:-1e9,high:1e9,avg:0,stdev:1},
-	lipw: 		{low:-1e9,high:1e9,avg:0,stdev:2}, 	// lip width
-	lipt: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip thickness
-	liph: 		{low:-1e9,high:1e9,avg:0,stdev:2},	// lip height
-	lipc: 		{low:1,high:1e9,avg:2,stdev:2},	 // lip curl; anything below -3 is just too creepy
+	lipw: 		{low:-1e9,high:1e9,avg:0,stdev:5}, 	// lip width
+	lipt: 		{low:-1e9,high:1e9,avg:0,stdev:4},	// lip thickness
+	liph: 		{low:-1e9,high:1e9,avg:0,stdev:3},	// lip height
+	lipc: 		{low:0,high:1e9,avg:3,stdev:5},	 // lip curl; anything below -3 is just too creepy
+	lipa: 		{low:-1e9,high:1e9,avg:0,stdev:4},	// lip arch
 	fem: 		{low:-1e9,high:1e9,avg:0,stdev:1},
 	sub: 		{low:-1e9,high:1e9,avg:0,stdev:2},
 	waist: 		{low:-1e9,high:1e9,avg:0,stdev:2},		// positive is narrower
@@ -120,6 +115,9 @@ var modDiscretePool = {
 }())
 
 
+// for example, max_hp, mana, etc...
+var vitalLimits = {};
+
 // for bias, if not defined then default to 1 - it means females tend to get higher values
 // otherwise, 0 means unisex, and a negative number means more affected by high masculinity
 var femBias = {
@@ -139,7 +137,6 @@ var femBias = {
 	height:-3,
 	gentialscnt:0,
 	face:3,
-	eyes:3,
 	lips:2,
 	hairlength:3,
 	shoulders:1.5,
@@ -154,6 +151,7 @@ var femBias = {
 	lipt:4,
 	liph:0,
 	lipc:0,
+	lipa:0,
 	legl:0,
 	eyec:0,
 	noseskew:0,
@@ -190,6 +188,7 @@ var defaultWorn = da.defaultWorn = {
 	shoes:{},
 	acc:{},
 };
+var defaultVitals = da.defaultVitals = getDefault(vitalLimits);
 // class definition for Player
 var Player = da.Player = function(data) {
 	Object.assign(this, {	// default value construction; overriden by properties of data passed in
@@ -198,23 +197,15 @@ var Player = da.Player = function(data) {
 		Mods 	: defaultMods(),
 		physique: defaultPhysique(),
 		worn 	: defaultWorn,
-		
-		// sex organ status and history
-		value_virginity	: false,
-		vag_used: 0,	// -1 indicates magic enhancements, higher number reflects higher usage
-		ass_used: 0,
-		vag_sex	: 0,	// # times used
-		ass_sex	: 0,
-		
-		piercings 	: [],
-		fetishes 	: [],
-		traits		: [],
+		vitals 	: defaultVitals(),	// where you would store max_hp, cur_hp, etc...
+		traits	: [],
 	}, defaultStats(), data);
 	// upgrade with newer default values if necessary so saves are compatible (new stat wouldn't be missing)
 	if (data) {
 		this.Mods = Object.assign({}, defaultMods(), data.Mods);
 		this.physique = Object.assign({}, defaultPhysique(), data.physique);
 		this.worn = Object.assign({}, defaultWorn, data.worn);
+		this.vitals = Object.assign({}, defaultVitals(), data.vitals);
 	}
 
 
@@ -238,8 +229,13 @@ var Player = da.Player = function(data) {
 Player.statLimits = statLimits;
 Player.modLimits = modLimits;
 Player.physiqueLimits = physiqueLimits;
+Player.vitalLimits = vitalLimits;
 Player.physiqueAllowed = physiqueAllowed;
+
 Player.statDiscretePool = statDiscretePool;
+Player.modDiscretePool = modDiscretePool;
+Player.physiqueDiscretePool = physiqueDiscretePool;
+
 Player.femBias = femBias;
 
 

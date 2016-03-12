@@ -249,4 +249,4 @@
 		}
 	};
 	
-}(this));
+}.call(window, window));

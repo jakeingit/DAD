@@ -179,8 +179,8 @@ function drawSideBraidsFront(ctx, ex) {
 		// ctx.lineTo(braidtop.x, braidtop.y);
 		ctx.fillStyle = "rgba(0,0,0,0)";
 	}
-
 }
+
 function drawSideBraidsBack(ctx, ex) {
 	ctx.save();
 	ctx.beginPath();
@@ -240,6 +240,7 @@ da.drawHairBack = [
 		ctx.stroke();
 	}
 ];
+
 da.drawHairFront = [
 	function(ctx, ex) {
 		da.reflectHorizontal(ctx);
