@@ -1,0 +1,30 @@
+<header class="site-header">
+
+<div id="header">
+
+  <div id="iconlinks_box">
+  <a href="https://github.com/lemonpi" title="github"><div id="github" class="iconlink"></div></a>
+  <a href="http://www.linkedin.com/profile/view?id=282810346&trk=nav_responsive_tab_profile" title="linkedin"><div id="linkedin" class="iconlink"></div></a>
+  <a href="{{ site.baseurl }}res/resume.pdf" title="resume"><div id="resume" class="iconlink"></div></a>
+  </div>
+  
+  <div id="titlearea"><h1><a id="titlelink" href="{{ site.baseurl }}/"><p id="titlename">Dynamic Avatar</p> <p id="titletext">Drawer</p></a></h1></div>
+</div>
+
+<div id="navbar">
+    <ul id="navbar-menu">
+        {% for my_page in site.pages %}
+          {% if my_page.title %}
+            {% if page.group == my_page.group %}
+            <li id="active">
+            {% else %}
+            <li>
+            {% endif %}
+            <a class="page-link navlink" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a></li>
+          {% endif %}
+        {% endfor %}
+        <li><a class="page-link navlink" href="{{ site.baseurl }}/da.js">Download</a></li>
+     <div style="clear:both"></div>
+    </ul>
+</div>
+</header>

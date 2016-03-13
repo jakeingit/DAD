@@ -6,5 +6,4 @@ archive
 svg
 *.zip
 *.rar
-_*
-!_config.yml
+_site
