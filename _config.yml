@@ -12,7 +12,7 @@ description: > # this means to ignore newlines until "baseurl:"
   Visualize a character by drawing to a canvas element.
   The drawn avatar is based off of numerical values, making it
   developer friendly and highly embeddable in any web game.
-baseurl: "" # the subpath of your site, e.g. /blog
+baseurl: "/DAD" # the subpath of your site, e.g. /blog
 url: "http://johnsonzhong.me/DAD" # the base hostname & protocol for your site
 github_username:  LemonPi
 
