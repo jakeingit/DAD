@@ -158,8 +158,8 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		drawTestes(ctx);
 		var hasc = avatar.hasCock();
 		
-		var ev = avatar.physique.gentialscnt - (Math.floor(avatar.physique.gentialscnt / 2) * 2);
-		for (var i = avatar.physique.gentialscnt; i > 0; i--) {
+		var ev = avatar.physique.genitals - (Math.floor(avatar.physique.genitals / 2) * 2);
+		for (var i = avatar.physique.genitals; i > 0; i--) {
 			var evi = i - (Math.floor(i / 2) * 2);
 			var ab = (evi == 1) ? 10 : -10;
 			var ang = ev == 1 ? ab * Math.floor(i / 2) : ab * Math.floor((i + 1) / 2);
@@ -1914,7 +1914,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 	// print other info
 	ctx.font = "bold 20px Arial";
-	ctx.fillText(avatar.isFutanari() ? String.fromCharCode(0x26a5) : avatar.isMale() ? String.fromCharCode(0x2642) : String.fromCharCode(0x2640), 6, 24);
+	ctx.fillText(avatar.isMale() ? String.fromCharCode(0x2642) : String.fromCharCode(0x2640), 6, 24);
 	ctx.font = "18px Arial";
 	ctx.fillText(avatar.name, 30, 24);
 

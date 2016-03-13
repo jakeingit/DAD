@@ -20,9 +20,10 @@
             {% else %}
             <li>
             {% endif %}
-            <a class="page-link navlink" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a></li>
+            <a class="page-link navlink" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.group }}</a></li>
           {% endif %}
         {% endfor %}
+        <li><a class="page-link navlink" href="{{ site.baseurl }}/test.html">Test</a></li>
         <li><a class="page-link navlink" href="{{ site.baseurl }}/da.js">Download</a></li>
      <div style="clear:both"></div>
     </ul>

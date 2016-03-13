@@ -16,22 +16,23 @@ canvas {
 
 .slider-holder, .clothes-holder {
 	display:flex;
-	width:380px;
+	width:300px;
 	padding: 5px;
 	border-bottom:1px solid black;
+    box-sizing:border-box;
 }
 .sliders-header {
 	text-align:center;
 	width:100%;
 }
 .slider {
-	width:210px;
+	width:150px;
 }
 .origstat {
-	width:100px;
+	width:80px;
 }
 .curstat {
-	padding-left:20px;
+	padding-left:15px;
 }
 .curstat:before {
 	content:"(";
@@ -49,7 +50,8 @@ canvas {
 }
 
 .action-button {
-	width:390px !important;
+    width:100%;
+	/*width:390px !important;*/
 }
 
 .wearing {

@@ -22,9 +22,6 @@ var statLimits = {	// core stats, each with low, high, average, and stdev (assum
 	butt	: 	{low:0, high:11, avg:3, stdev:2},
 	fem 	: 	{low:0, high:11, avg:5, stdev:1},
 	sub 	: 	{low:0, high:11, avg:4, stdev:1},
-
-	// vitals
-	arousal : {low:0, high:11, avg:4, stdev:2},	
 };
 var statDiscretePool = { 	// pool of available values for discrete properties
 	gender  : 	["female", "male", "futa"],
@@ -40,7 +37,7 @@ var physiqueLimits = {
 	irisc: 		{low:-20,high:100,avg:5,stdev:20},	// red (~-20) to brown (0) to green (10) to blue (20) to purple (40)
 	skin: 		{low:-20,high:50,avg:10,stdev:30},	// translucent (-20) to porcelein (-10) to fair (-5) to tanned (5) to brown (15) pure black (50)
 	breastrows: {low:0,high:0,avg:0,stdev:0},		// should only have 1 row...
-	gentialscnt:{low:0,high:2,avg:1,stdev:0.1},
+	genitals: 	{low:0,high:2,avg:1,stdev:0.1},
 	face: 		{low:-8,high:28,avg:10,stdev:5},		// hypermasculine (-5) to androgenous (10) to feminine (25)
 	eyes: 		{low:-20,high:25,avg:0,stdev:15},		// squinty eyes (-15) to super surprise (25)
 	lips: 		{low:-20,high:40,avg:0,stdev:10},	// thin line (-20) to duck lips (40)
@@ -135,7 +132,7 @@ var femBias = {
 	// physiques
 	hairc:0,
 	height:-3,
-	gentialscnt:0,
+	genitals:0,
 	face:3,
 	lips:2,
 	hairlength:3,
@@ -453,14 +450,11 @@ Player.prototype.hasVagina = function () {
 	var tst = this.calcTestes(false);
 	return tst > 11;
 };
-Player.prototype.isFutanari = function() {
-	return this.hasCock() && this.hasVagina();
-};
 Player.prototype.isFemale = function () { 
 	return this.fem > 5; 
 };
 Player.prototype.isMale = function () { 
-	return !(this.isFemale() || this.isFutanari()); 
+	return !this.isFemale(); 
 };
 
 

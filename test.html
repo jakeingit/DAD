@@ -1,10 +1,3 @@
----
-layout: raw
-title: Test
-permalink: /test.html
-group: test
----
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,19 +10,21 @@ group: test
 <body>
 
 <div id="testbody">
-	<!-- <canvas id="player_avatar" width="500" height="800" style="border:1px solid black"></canvas> -->
-	<div id="teststats">
-		<div id="slidersP" style="border:1px solid black;"></div>
-		<div id="slidersS" style="border:1px solid black;"></div>
-		<div id="inventory"> </div>
+	<div id="canvascolumn">
 		<div id="chargen"><button id="randomizechar">Randomize Character</button></div>
 		<button class="action-button" id="toggledrawpoints">Toggle Drawpoints</button>
 		<button class="action-button" id="toggleskeletonpoints">Toggle Skeletonpoints</button>
-		<div id="imgtostr"><input type="file" id="imgupload" accept="image/*" style="display:none" onchange="processUploadedFiles(this.files)">
+		<div class="action-button" id="imgtostr"><input type="file" id="imgupload" accept="image/*" style="display:none" onchange="processUploadedFiles(this.files)">
 			<button class="action-button" id="imguploadbtn">Make Custom Texture (drag and drop to canvas)<br>
 			(use small tilable images, like 10x10px)</button></div>
 		<button class="action-button" id="save">Save</button>
 		<button class="action-button" id="load">Load</button>
+	</div>
+
+	<div id="teststats">
+		<div id="slidersP" style="border:1px solid black;"></div>
+		<div id="slidersS" style="border:1px solid black;"></div>
+		<div id="inventory"> </div>
 		<!-- <button class="action-button" id="drawcurve">Start/Finish drawing</button> -->
 	</div>
 	<div id="slidersM" style="border:1px solid black;"></div>
@@ -130,13 +125,13 @@ var PC = new da.Player({
 console.log("our extended stat of int:", PC.int);
 
 // EXAMPLE how to add a canvas to the HTML
-var canvas_holder = document.getElementById("testbody");
+var canvas_holder = document.getElementById("canvascolumn");
 // getting it for the first time, so create it with those style overrides
 var canvas = da.getCanvas("player_avatar", {
 	parent:canvas_holder,
 	border:"1px solid black",
-	width:800,
-	height:1500,
+	width:600,
+	height:800,
 });
 
 
@@ -340,12 +335,13 @@ $(canvas).mousedown(function(e) {
 
 
 var chargen = $("#chargen");
-var holder = $('<div class="slider-holder" id="femalebias"></div>').appendTo(chargen);
+var holder = $('<div class="slider-holder" id="femalebias" style="width:100%" border:none></div>').appendTo(chargen);
 var orig = $('<div class="origstat">female bias</div>').appendTo(holder);
 holder.append(sliderfembias);
 sliderfembias.setAttribute("type", "range");
 sliderfembias.setAttribute("class", "slider");
 sliderfembias.setAttribute("id", "sliderfembias");
+sliderfembias.style.width = "75%";
 sliderfembias.max = 1;
 sliderfembias.min = -1;
 sliderfembias.step = 0.01;
@@ -414,7 +410,7 @@ function redrawPage(PC, calcPhysique) {
 	for (var i = 0; i < sortedProperties.length; ++i) {
 		var p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + '"></div>').appendTo(sliderH);
-		var orig = $(['<div class="origstat">',p,' ',Math.round(PC.physique[p]*10)/10,'</div>'].join("")).appendTo(holder);
+		var orig = $(['<div class="origstat">',p,'</div>'].join("")).appendTo(holder);
 
 		var s = document.createElement("input");
 		holder.append(s);
@@ -445,7 +441,7 @@ function redrawPage(PC, calcPhysique) {
 	for (var i = 0; i < sortedProperties.length; ++i) {
 		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'stat"></div>').appendTo(sliderS);
-		var orig = $(['<div class="origstat">',p,' ',PC[p],'</div>'].join("")).appendTo(holder);
+		var orig = $(['<div class="origstat">',p,'</div>'].join("")).appendTo(holder);
 
 		var s = document.createElement("input");
 		holder.append(s);
@@ -476,7 +472,7 @@ function redrawPage(PC, calcPhysique) {
 	for (var i = 0; i < sortedProperties.length; ++i) {
 		p = sortedProperties[i];
 		var holder = $('<div class="slider-holder" id="' + p + 'mod"></div>').appendTo(sliderM);
-		var orig = $(['<div class="origstat">',p,' ',PC.Mods[p],'</div>'].join("")).appendTo(holder);
+		var orig = $(['<div class="origstat">',p,'</div>'].join("")).appendTo(holder);
 
 		var s = document.createElement("input");
 		holder.append(s);
