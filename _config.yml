@@ -1,0 +1,20 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely need to edit after that.
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+title: Dynamic Avatar Drawer
+email: johnsonzhong@hotmail.ca
+description: > # this means to ignore newlines until "baseurl:"
+  Visualize a character by drawing to a canvas element.
+  The drawn avatar is based off of numerical values, making it
+  developer friendly and highly embeddable in any web game.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "http://johnsonzhong.me/DAD" # the base hostname & protocol for your site
+github_username:  LemonPi
+
+# Build settings
+markdown: kramdown

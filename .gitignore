@@ -7,3 +7,4 @@ svg
 *.zip
 *.rar
 _*
+!_config.yml
