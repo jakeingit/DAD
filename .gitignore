@@ -1,5 +1,9 @@
+_site
+.sass-cache
+.jekyll-metadata
 unnecessary
 archive
-da.js
-*.rar
+svg
 *.zip
+*.rar
+_*

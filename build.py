@@ -9,8 +9,8 @@ from watchdog.events import FileSystemEventHandler
 import os
 import time
 
-license = """/* Copyright 2012 Tuatha, 2016 penumbra
-   Originally created by Tuatha, totally overhauled by Penumbra
+license = """/* Copyright 2012 Tuatha, 2016 Johnson Zhong
+   Originally created by Tuatha, totally overhauled by Johnson
    Feel free to include this into your game, 
    just remember to credit and leave the license in place.
 
