@@ -267,16 +267,16 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 		ctx.translate(ex.mons.tip.x, ex.mons.tip.y);
 		ctx.rotate(rot*Math.PI/180);
 
-		// TOOD erection? (not sure if it's even necessary)
-		ex.tippenis = {x:79, y:ex.mons.tip.y+size*6.5};
+		ex.penis = {};
+		ex.penis.tip = {x:79, y:ex.mons.tip.y+size*6.5};
 
-		var translatedtipy = ex.tippenis.y-ex.mons.tip.y;
+		var translatedtipy = ex.penis.tip.y-ex.mons.tip.y;
 
 
 		ctx.beginPath();
 		// shaft
-		ex.leftheadpenis = {x:ex.tippenis.x-size*0.8, y:ex.tippenis.y-size*6+2};
-		var translatedlefthead = {x:ex.leftheadpenis.x-ex.tippenis.x, y:ex.tippenis.y-ex.leftheadpenis.y};
+		ex.leftheadpenis = {x:ex.penis.tip.x-size*0.8, y:ex.penis.tip.y-size*6+2};
+		var translatedlefthead = {x:ex.leftheadpenis.x-ex.penis.tip.x, y:ex.penis.tip.y-ex.leftheadpenis.y};
 		var translatedrighthead = {x:0-translatedlefthead.x, y:translatedlefthead.y};
 
 		// center of the base (perhaps as a draw point for pubic hair?)
@@ -1487,12 +1487,20 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 			ex.toe.in = {x:s.toe.in.x -legs*0.7, y:s.toe.in.y -legs/3,
 				cp1:{x:s.toe.in.cp1.x -legs/3, y:s.toe.in.cp1.y -legs/3}};
+
+			ex.toe.intop = {x:ex.toe.in.x+0.2, y:ex.toe.in.y-3};
+
+ 			ex.ankle.in = {x:s.ankle.x+14 - legs/2, y:s.ankle.y+6 -legs/3,
+ 				cp1:{x:s.ankle.x+13 - legs*0.6, y:s.ankle.y+15 - legs/3}};
+
 			// wearing heels
 			if (shoeheight >= 3) {
 				ex.toe.in.cp1.y += 10;
+				ex.toe.out.x += 6;
+				ex.ankle.in.cp1.x += 3;
+				delete ex.toe.mid;
+				delete ex.toe.intop;
 			}
- 			ex.ankle.in = {x:s.ankle.x+14 - legs/2, y:s.ankle.y+6 -legs/3,
- 				cp1:{x:s.ankle.x+13 - legs*0.6, y:s.ankle.y+15 - legs/3}};
 
 			ex.ankle.intop = {x:s.ankle.x+12 -legs/3, y:s.ankle.y-2 -legs/5 -legl*0.6,
 				cp1:{x:s.ankle.x+15 -legs/2, y:s.ankle.y+1 -legs/5}};
@@ -1576,7 +1584,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 				ex.toe.out = {x:ex.ankle.out.x-2+shoeheight*0.2+legaddition*0.1, y:ex.ankle.out.y+12+shoeheight*2};
 				ex.toe.in = {x:ex.toe.out.x+14-shoeheight*0.2, y:ex.toe.out.y};
 				ex.toe.in.cp1 = {x:ex.toe.out.x+3, y:ex.toe.out.y+15};
-				ex.toe.in.cp2 = {x:ex.toe.in.x-3, y:ex.toe.in.y+1};
+				ex.toe.in.cp2 = {x:ex.toe.in.x-3, y:ex.toe.in.y+9};
 				ex.ankle.in = {x:s.ankle.x+10 + (a + a + b + d + b)*0.95, y:s.ankle.y+4};
 
 				ex.ankle.intop = {x:ex.ankle.in.x-1,y:ex.ankle.in.y-5};
@@ -1613,7 +1621,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		// consolidated drawing of legs (some points will always be null for either masculinity)
 		da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
-			ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop, ex.ankle.in, ex.ankle.intop,
+			ex.toe.out, da.tracePoint(ex.toe.mid,1), ex.toe.in, ex.toe.intop, ex.ankle.in, ex.ankle.intop,
 			ex.calf.in, ex.kneecap, ex.kneecap.top, ex.thigh.in, ex.groin, ex.groin.in);
 	}
 

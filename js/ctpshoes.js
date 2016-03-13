@@ -223,33 +223,26 @@ da.ctp.shoes.drawShortBoots = function(stroke, fill) {
 
 da.ctp.shoes.drawHeels = function(stroke, fill, drawDetails, drawSideDetails) {
 	function drawBase(ctx, ex, mods) {
-		ctx.moveTo(ex.toe.out.x-1, ex.toe.out.y-4);
-		ctx.quadraticCurveTo((ex.toe.out.x+ex.toe.in.x)/2, ex.toe.out.y+15,
-			ex.toe.in.x-0.5, ex.toe.in.y-2.5);
+		var sp = da.splitCurve(ex.ankle.outbot, ex.toe.out, 0.5);
+		var heelouttop = {x:sp.right.p1.x, y:sp.right.p1.y};
+		heelouttop.cp1 = {x:heelouttop.x-2, y:heelouttop.y+4};
+		var heelintop = {x:ex.toe.in.x + 1, y:ex.toe.in.y-2.5};
 
-		var heeltip = {x:(ex.toe.out.x+ex.toe.in.x)/2, y:(ex.toe.out.y+ex.toe.in.y)/2+15};
+		heelintop.cp1 = ex.toe.in.cp1;
+
+		var heeltip = {x:(heelouttop.x+heelintop.x)/2, y:(ex.toe.out.y+ex.toe.in.y)/2+17};
 		var heelout = {x:ex.toe.out.x-1, y:ex.toe.out.y+5};
-		var heelin = {x:ex.toe.in.x+0.2, y:ex.toe.in.y+4};
+		var heelin = {x:heelintop.x, y:heelintop.y+8};
 
+		heelin.cp1 = {x:heelin.x+1, y:heelin.y-3};
+		heelout.cp1 = {x:heelout.x+1, y:(heeltip.y+heelout.y)/2};
+		heeltip.cp1 = {x:heelin.x-1, y:(heeltip.y+heelin.y)/2};
 
-		ctx.lineTo(heelin.x, heelin.y);
-		ctx.quadraticCurveTo(heelin.x-1, (heeltip.y+heelin.y)/2, heeltip.x, heeltip.y);
-		ctx.quadraticCurveTo(heelout.x+1, (heeltip.y+heelout.y)/2, heelout.x, heelout.y);
-		ctx.lineTo(ex.toe.out.x-1, ex.toe.out.y-4);
-		ctx.lineJoin = "miter";
+		da.drawPoints(ctx, heelouttop, heelintop, heelin, heeltip, heelout, heelouttop);
+
+		// ctx.lineJoin = "miter";
 	}
-	function drawEdge(ctx, ex, mods) {
-		// along the edge of the foot
-		ctx.moveTo(ex.ankle.outbot.x-0.5, ex.ankle.outbot.y);
-		ctx.quadraticCurveTo(ex.toe.out.x-4, ex.toe.out.y-3,
-			ex.toe.out.x+2, ex.toe.out.y+4);
-		ctx.quadraticCurveTo(ex.toe.out.x-1, ex.toe.out.y-3,
-			ex.ankle.outbot.x-0.5, ex.ankle.outbot.y);
 
-		ctx.moveTo(ex.toe.in.x+0.1, ex.toe.in.y-1);
-		ctx.quadraticCurveTo(ex.toe.in.x+1, (ex.ankle.in.y+ex.toe.in.y-4)/2, 
-			ex.ankle.in.x, ex.ankle.in.y);
-	}
 	function drawSide(ctx, ex, mods) {
 		ctx.save();
 		ctx.beginPath();
@@ -306,10 +299,8 @@ da.ctp.shoes.drawHeels = function(stroke, fill, drawDetails, drawSideDetails) {
 	}
 	function draw(ctx, ex, mods) {
 		// always draw base heels
-		var drawHeelsBase = da.getFullDrawer(stroke, fill, 2, drawBase);
+		var drawHeelsBase = da.getFullDrawer("rgba(0,0,0,0)", fill, 2, drawBase);
 		drawHeelsBase.call(this, ctx, ex, mods);
-		var drawHeelsEdge = da.getFullDrawer("rgba(0,0,0,0)", fill, 3, drawEdge);
-		drawHeelsEdge.call(this, ctx, ex, mods);
 
 		// draw side view (challenging to scale with heel height correctly!)
 		drawSide.call(this, ctx, ex, mods);
