@@ -163,7 +163,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 			var evi = i - (Math.floor(i / 2) * 2);
 			var ab = (evi == 1) ? 10 : -10;
 			var ang = ev == 1 ? ab * Math.floor(i / 2) : ab * Math.floor((i + 1) / 2);
-			drawPenis(ctx, ang, penis-avatar.arousal/10, hasc);
+			drawPenis(ctx, ang, penis, hasc);
 		}
 	}
 	
