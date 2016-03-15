@@ -88,7 +88,9 @@ var clothes = da.clothes = {
 		loc: 	"bot",
 		layer: 	2,
 		longdesc:"quality denim of the ass hugging type.",
-		drawunderbreasts: ctp.bot.drawTightPants("rgb(0, 68, 102)", da.getPattern("washed jeans")),
+		drawunderbreasts: [ctp.bot.drawTightPants("rgb(0, 68, 102)", da.getPattern("washed jeans")),
+			ctp.bot.drawBulge("rgb(0, 68, 102)", da.getPattern("washed jeans"))],
+		hidecrotch: true,
 	}),
 
 	"plaid_pencil_skirt" :
@@ -140,9 +142,9 @@ var clothes = da.clothes = {
 		layer: 	3,
 		height: 4,
 		longdesc: "TODO",
-		drawafterall: ctp.shoes.drawHeels("black", "black", 
-			ctp.shoes.details.drawHeelStrap("black"), 
-			ctp.shoes.sideDetails.drawHeelStrapDetails("black")),
+		drawafterall: [ctp.shoes.drawHeels("black", "black"), 
+			ctp.shoes.details.drawHeelStrap("black", null),
+			ctp.shoes.sideDetails.drawHeelStrapDetails("black")],
 		legs: 	4,
 		ass: 	2,
 	}),

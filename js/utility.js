@@ -272,9 +272,27 @@ da.adjustPoint = function(point, dx, dy) {
   }
   return movedPoint;
 }
-
+da.averagePoint = function(p1, p2) {
+  return {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
+}
+da.diff = function(p1, p2) {
+  return {x:p1.x-p2.x, y:p1.y-p2.y};
+}
 
 // utility and higher level functions for drawing clothes
+
+/** set stroke and fill to potentially be functions */
+da.setStrokeAndFill = function(ctx, stroke, fill) {
+    if (typeof stroke === "function")
+      ctx.strokeStyle = stroke(ctx);
+    else
+      ctx.strokeStyle = stroke;
+    if (typeof fill === "function")
+      ctx.fillStyle = fill(ctx);
+    else 
+      ctx.fillStyle = fill;
+}
+
 function drawFull(ctx, ex, mods, drawHalf) {
   // left half
   ctx.beginPath();
@@ -292,18 +310,13 @@ function drawFull(ctx, ex, mods, drawHalf) {
 var getFullDrawer = da.getFullDrawer = function(stroke, fill, lineWidth, drawHalf) {
   // everything needs a stroke, fill, and lineWidth, as well the half drawing method
   // returns a full draw method (draws both left and right)
+  if (!fill) fill = "rgba(0,0,0,0)";
   function draw(ctx, ex, mods) {
     ctx.save();
 
     ctx.lineWidth = lineWidth;
-    if (typeof stroke === "function")
-      ctx.strokeStyle = stroke(ctx);
-    else
-      ctx.strokeStyle = stroke;
-    if (typeof fill === "function")
-      ctx.fillStyle = fill(ctx);
-    else 
-      ctx.fillStyle = fill;
+    da.setStrokeAndFill(ctx, stroke, fill);
+
 
     ctx.save(); // drawHalf might change style in itself
     ctx.beginPath();

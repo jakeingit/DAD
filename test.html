@@ -121,6 +121,7 @@ var PC = new da.Player({
 	},
 });
 
+
 // see that our new stat of intelligence is defined
 console.log("our extended stat of int:", PC.int);
 
@@ -549,6 +550,9 @@ function redrawPage(PC, calcPhysique) {
 			PC = eval(PCserialized);
 			redrawPage(PC, true);
 			console.log("loaded",PC);
+		}
+		else {
+			console.log("no player saved!");
 		}
 	});
 

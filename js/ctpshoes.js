@@ -304,30 +304,20 @@ da.ctp.shoes.drawHeels = function(stroke, fill, drawDetails, drawSideDetails) {
 
 		// draw side view (challenging to scale with heel height correctly!)
 		drawSide.call(this, ctx, ex, mods);
-
-		// sometimes want extra addornments on heels
-		if (drawDetails) {
-			var drawDetailsFull = da.getFullDrawer(stroke, fill, 2, drawDetails);
-			drawDetailsFull.call(this, ctx, ex, mods);
-		}
-		if (drawSideDetails) {
-			drawSideDetails.call(this, ctx, ex, mods);
-		}
 	}
 	return draw;
 }
+
 // heel decorators
 da.ctp.shoes.details = {};
 da.ctp.shoes.sideDetails = {};
-da.ctp.shoes.details.drawHeelStrap = function(stroke) {
+da.ctp.shoes.details.drawHeelStrap = function(stroke, fill) {
 	function draw(ctx, ex, mods) {
-		ctx.strokeStyle = stroke;
-		ctx.fillStyle = "rgba(0,0,0,0)";	// can still override choices inside here	
 		ctx.moveTo(ex.ankle.out.x, ex.ankle.out.y);
 		ctx.quadraticCurveTo(ex.ankle.out.x+5,ex.ankle.out.y+5,
 			ex.ankle.intop.x, ex.ankle.intop.y);	
 	}
-	return draw;
+	return da.getFullDrawer(stroke, fill, 2, draw);
 }
 
 // heel detail decorators (window on the left)

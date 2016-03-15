@@ -248,14 +248,21 @@ Player.prototype.selectClothing = function(drawAt) {
 		var locWorn = this.worn[loc];
 		for (var layer in locWorn) {
 			var c = da.clothes[locWorn[layer]];
-			if (c && typeof c[drawAt] === "function") 
-				toDraw.push({layer:layer,draw:c[drawAt]});
+			if (c && c[drawAt]) {
+				if (typeof c[drawAt] === "function")	// only 1 thing to draw at this opportunity
+					toDraw.push({layer:layer,draw:c[drawAt]});
+				else if (c[drawAt].length)	{// is an array-like object containing multiple, push all sequentially
+					c[drawAt].forEach(function(drawer){
+						toDraw.push({layer:layer,draw:drawer});
+					});
+				}
+			} 
 		}
 	}
 
 	// sort in order of layer with lower layer placed first
 	toDraw.sort(function(a,b) {
-		return (a.layer < b.layer)? -1 : 1;
+		return (a.layer === b.layer)? 0 : (a.layer < b.layer)? -1 : 1;
 	});	
 	return toDraw;
 };
@@ -271,8 +278,8 @@ Player.prototype.drawAdditional = function(ctx, ex, selector) {
 	}
 };
 
+/** adjust the player's height based on shoes worn */
 Player.prototype.heightAdjust = function() {
-	// heel's height will make you taller!
 	var extraheight = 0;
 	// take the max height of what's being worn in shoes location
 	for (var layer in this.worn.shoes) {
@@ -282,6 +289,19 @@ Player.prototype.heightAdjust = function() {
 
 	return extraheight;
 };
+
+/** some clothing items hide crotch so genitals should be drawn differently */
+Player.prototype.crotchHidden = function() {
+	for (var w in this.worn) {
+		for (var layer in this.worn[w]) {
+			if (da.clothes[this.worn[w][layer]] && da.clothes[this.worn[w][layer]].hasOwnProperty("hidecrotch"))
+				return true;
+		}
+	}
+	return false;
+}
+
+/** check if the player is wearing a clothing item */
 Player.prototype.isWearing = function(clothesName) {
 	if (!da.clothes.hasOwnProperty(clothesName)) return false;
 	var cc = da.clothes[clothesName];
@@ -441,7 +461,7 @@ Player.prototype.calcPhysique = function() {
     this.physique.legs = this.calcLegs();
     this.clampPhysique();
 };
-Player.prototype.hasCock = function() {
+Player.prototype.hasPenis = function() {
 	if (this.Mods.penis > 4) return true;	// higher modifier overrides this
 	var tst = this.calcTestes(false);
 	return tst <= 11;

@@ -155,18 +155,34 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 	{
 		ctx.strokeStyle = SKINCB;
 		ctx.fillStyle = SKINC;
-		drawTestes(ctx);
-		var hasc = avatar.hasCock();
-		
-		var ev = avatar.physique.genitals - (Math.floor(avatar.physique.genitals / 2) * 2);
-		for (var i = avatar.physique.genitals; i > 0; i--) {
-			var evi = i - (Math.floor(i / 2) * 2);
-			var ab = (evi == 1) ? 10 : -10;
-			var ang = ev == 1 ? ab * Math.floor(i / 2) : ab * Math.floor((i + 1) / 2);
-			drawPenis(ctx, ang, penis, hasc);
+
+		if (avatar.hasPenis() && avatar.crotchHidden()) {
+			calcBulge();
 		}
+		else {
+			drawTestes(ctx);
+			var ev = avatar.physique.genitals - (Math.floor(avatar.physique.genitals / 2) * 2);
+			for (var i = avatar.physique.genitals; i > 0; i--) {
+				var evi = i - (Math.floor(i / 2) * 2);
+				var ab = (evi == 1) ? 10 : -10;
+				var ang = ev == 1 ? ab * Math.floor(i / 2) : ab * Math.floor((i + 1) / 2);
+				drawPenis(ctx, ang, penis, avatar.hasPenis());
+			}			
+		}
+		
 	}
 	
+	/** penis and testes hidden by clothing item, don't draw anything */
+	function calcBulge() {
+		var size = -(penis*2 + testes);
+		if (size < 0) return;
+		ex.bulge = {};
+		ex.bulge.top = {x:75-size*0.2, y:ex.mons.tip.y-15-size*0.1};
+		ex.bulge.bot = {x:79, y:ex.mons.tip.y+size*0.3};
+		ex.bulge.bot.cp1 = {x:77-size*0.4, y:ex.bulge.top.y+2+size*0.3};
+		ex.bulge.bot.cp2 = {x:77-size*0.3-penist, y:ex.bulge.bot.y};
+	}
+
 	function drawTestes(ctx)
 	{
 		ctx.save();
@@ -1621,7 +1637,7 @@ da.drawfigure = function(canvasname, avatar, passThrough) {
 
 		// consolidated drawing of legs (some points will always be null for either masculinity)
 		da.drawPoints(ctx, null, ex.ankle.outtop, ex.ankle.out, ex.ankle.outbot,
-			ex.toe.out, da.tracePoint(ex.toe.mid,1), ex.toe.in, ex.toe.intop, ex.ankle.in, ex.ankle.intop,
+			ex.toe.out, ex.toe.mid, ex.toe.in, ex.toe.intop, ex.ankle.in, ex.ankle.intop,
 			ex.calf.in, ex.kneecap, ex.kneecap.top, ex.thigh.in, ex.groin, ex.groin.in);
 	}
 
